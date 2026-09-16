@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import dayjs from "dayjs";
 import type { ReactNode } from "react";
 import brand from "../../../theme/brand";

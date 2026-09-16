@@ -82,7 +82,7 @@ const ReportShell = <T,>({
 
   useEffect(() => {
     if (!page) setCurrentPage(1);
-  }, [rangeLabel, title]);
+  }, [page, rangeLabel, setCurrentPage, title]);
 
   const tableColumns: ColumnsType<any> = columns
     .filter((c) => !c.detail)
