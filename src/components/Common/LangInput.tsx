@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { Button, Form, Input, Tooltip } from "antd";
 import { Languages, Loader2 } from "lucide-react";
 import React, { useState } from "react";
