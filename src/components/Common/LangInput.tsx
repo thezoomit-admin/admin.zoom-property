@@ -64,7 +64,7 @@ export const ENGLISH_RULE = {
 
 interface LangInputProps {
   label: React.ReactNode;
-  name: string | string[];
+  name: string | number | (string | number)[];
   lang: "bn" | "en";
   required?: boolean;
   placeholder?: string;
@@ -73,7 +73,12 @@ interface LangInputProps {
   /**
    * Optional name of the English source field to translate from when auto-converting.
    */
-  sourceFieldName?: string;
+  sourceFieldName?: string | number | (string | number)[];
+  /**
+   * When this input sits inside a `Form.List`, pass the list's root path so
+   * translate get/set use the full store path while `name` stays relative.
+   */
+  pathPrefix?: (string | number)[];
   form?: any;
   className?: string;
 }
@@ -92,6 +97,7 @@ export const LangInput: React.FC<LangInputProps> = ({
   isTextArea = false,
   rows = 2,
   sourceFieldName,
+  pathPrefix,
   form,
   className,
 }) => {
@@ -108,23 +114,29 @@ export const LangInput: React.FC<LangInputProps> = ({
     rules.push(ENGLISH_RULE);
   }
 
+  const toPath = (field: string | number | (string | number)[]) => {
+    const parts = Array.isArray(field) ? field : [field];
+    return pathPrefix?.length ? [...pathPrefix, ...parts] : parts;
+  };
+
   const handleAutoTranslate = async () => {
     if (!form) return;
     setTranslating(true);
     try {
-      // Check if source field value exists first, else use current field value
-      let sourceText = sourceFieldName ? form.getFieldValue(sourceFieldName) : "";
+      let sourceText = sourceFieldName
+        ? form.getFieldValue(toPath(sourceFieldName))
+        : "";
       if (!sourceText) {
-        sourceText = form.getFieldValue(name);
+        sourceText = form.getFieldValue(toPath(name));
       }
 
-      if (!sourceText || !sourceText.trim()) {
+      if (!sourceText || !String(sourceText).trim()) {
         toast.info("অনুবাদের জন্য আগে ইংরেজিতে টেক্সট টাইপ করুন");
         return;
       }
 
-      const bnText = await translateToBanglaApi(sourceText);
-      form.setFieldsValue({ [Array.isArray(name) ? name.join(".") : name]: bnText });
+      const bnText = await translateToBanglaApi(String(sourceText));
+      form.setFieldValue(toPath(name), bnText);
       toast.success("বাংলায় রূপান্তর করা হয়েছে!");
     } finally {
       setTranslating(false);

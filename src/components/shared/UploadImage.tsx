@@ -3,8 +3,9 @@ import { useState, useMemo } from "react";
 import { RiDeleteBinLine } from "react-icons/ri";
 import SetMediaModal from "../modal/media/SetMediaModal";
 import AntImage from "./AntImage";
-import { Form, Input } from "antd";
+import { Form } from "antd";
 import { config } from "../../config";
+import { mediaSrc } from "../../utils/mediaSrc";
 
 interface UploadImageProps {
   form: any;
@@ -19,6 +20,27 @@ interface UploadImageProps {
   mediaKind?: "image" | "document";
 }
 
+/** Holds Form values without coercing arrays through <Input>. */
+const ValueHolder = ({ value: _value }: { value?: unknown; onChange?: (v: unknown) => void }) =>
+  null;
+
+const toPath = (path: string | (string | number)[]) =>
+  Array.isArray(path)
+    ? path
+    : path.split(".").map((key) => (/^\d+$/.test(key) ? Number(key) : key));
+
+const previewUrl = (raw: unknown, data?: any): string => {
+  if (data?.url) return mediaSrc(data.url) || mediaSrc(data.path || data.key) || "";
+  if (typeof raw === "string" && raw.trim()) return mediaSrc(raw);
+  if (data?.path || data?.key) return mediaSrc(data.path || data.key);
+  return "";
+};
+
+const mediaObjectId = (data: any): string | undefined => {
+  const id = data?._id || data?.id;
+  return id != null ? String(id) : undefined;
+};
+
 const UploadImage = ({
   form,
   fieldPath,
@@ -30,23 +52,22 @@ const UploadImage = ({
   const isDoc = mediaKind === "document";
   const uploadLabel = isDoc ? "Upload File" : "Upload Image";
 
-  const pathArray = useMemo(() => {
-    return Array.isArray(fieldPath)
-      ? fieldPath
-      : fieldPath
-          .split(".")
-          .map((key) => (/^\d+$/.test(key) ? Number(key) : key));
-  }, [fieldPath]);
+  const pathArray = useMemo(() => toPath(fieldPath), [fieldPath]);
+  const idPathArray = useMemo(
+    () => (idFieldPath ? toPath(idFieldPath) : null),
+    [idFieldPath],
+  );
 
   const fieldValue = Form.useWatch(pathArray, form);
 
   const imageUrls =
     mode === "multiple"
-      ? Array.isArray(fieldValue)
-        ? fieldValue
-        : fieldValue
-        ? [fieldValue]
-        : []
+      ? (Array.isArray(fieldValue)
+          ? fieldValue
+          : fieldValue
+            ? [fieldValue]
+            : []
+        ).filter((u): u is string => typeof u === "string" && !!u.trim())
       : fieldValue;
 
   const handleDelete = (
@@ -61,10 +82,7 @@ const UploadImage = ({
         updated.splice(index, 1);
         form.setFieldValue(pathArray, updated);
 
-        if (idFieldPath) {
-          const idPathArray = Array.isArray(idFieldPath)
-            ? idFieldPath
-            : idFieldPath.split(".").map((key) => (/^\d+$/.test(key) ? Number(key) : key));
+        if (idPathArray) {
           const currentIds = form.getFieldValue(idPathArray) || [];
           if (Array.isArray(currentIds) && currentIds.length > index) {
             const updatedIds = [...currentIds];
@@ -75,46 +93,55 @@ const UploadImage = ({
       }
     } else {
       form.setFieldValue(pathArray, null);
-      if (idFieldPath) {
-        form.setFieldValue(idFieldPath, null);
+      if (idPathArray) {
+        form.setFieldValue(idPathArray, null);
       }
     }
   };
 
   const handleImageSelect = (selected: string | string[], selectedData?: any) => {
     if (mode === "multiple") {
-      const newUrls = Array.isArray(selected) ? selected : [selected];
-      
-      // Prevent adding the exact same URL twice
-      const urlsToAdd = newUrls.filter(url => !(imageUrls || []).includes(url));
-      
-      if (urlsToAdd.length > 0) {
-        const updatedUrls = [...(imageUrls || []), ...urlsToAdd];
-        form.setFieldValue(pathArray, updatedUrls);
-        
-        if (idFieldPath && selectedData) {
-          const newIds = selectedData.map((d: any) => d._id || d.id || d.name || d.path);
-          
-          const idPathArray = Array.isArray(idFieldPath)
-            ? idFieldPath
-            : idFieldPath.split(".").map((key) => (/^\d+$/.test(key) ? Number(key) : key));
-            
-          const currentIds = form.getFieldValue(idPathArray) || [];
-          
-          const idsToAdd = urlsToAdd.map(url => {
-            const idx = newUrls.indexOf(url);
-            return newIds[idx];
-          });
-          
-          const updatedIds = [...currentIds, ...idsToAdd];
-          form.setFieldValue(idPathArray, updatedIds);
-        }
+      const items = Array.isArray(selectedData)
+        ? selectedData
+        : selectedData
+          ? [selectedData]
+          : [];
+      const rawUrls = Array.isArray(selected) ? selected : [selected];
+
+      const pairs = rawUrls
+        .map((raw, idx) => ({
+          url: previewUrl(raw, items[idx]),
+          id: mediaObjectId(items[idx]),
+        }))
+        .filter((p) => p.url);
+
+      const existing = imageUrls || [];
+      const urlsToAdd = pairs.filter((p) => !existing.includes(p.url));
+      if (urlsToAdd.length === 0) {
+        setOpenSetImageModal(false);
+        return;
+      }
+
+      form.setFieldValue(pathArray, [...existing, ...urlsToAdd.map((p) => p.url)]);
+
+      if (idPathArray) {
+        const currentIds = form.getFieldValue(idPathArray) || [];
+        const idsToAdd = urlsToAdd.map((p) => p.id).filter(Boolean);
+        form.setFieldValue(idPathArray, [
+          ...(Array.isArray(currentIds) ? currentIds : []),
+          ...idsToAdd,
+        ]);
       }
     } else {
-      form.setFieldValue(pathArray, selected);
-      
-      if (idFieldPath && selectedData) {
-        form.setFieldValue(idFieldPath, selectedData._id || selectedData.id || selectedData.name || selectedData.path);
+      const data = Array.isArray(selectedData) ? selectedData[0] : selectedData;
+      const url = previewUrl(
+        Array.isArray(selected) ? selected[0] : selected,
+        data,
+      );
+      form.setFieldValue(pathArray, url || null);
+
+      if (idPathArray) {
+        form.setFieldValue(idPathArray, mediaObjectId(data) || null);
       }
     }
     setOpenSetImageModal(false);
@@ -144,11 +171,11 @@ const UploadImage = ({
   return (
     <div className="space-y-2">
       <Form.Item name={pathArray} hidden>
-        <Input />
+        <ValueHolder />
       </Form.Item>
-      {idFieldPath && (
-        <Form.Item name={idFieldPath} hidden>
-          <Input />
+      {idPathArray && (
+        <Form.Item name={idPathArray} hidden>
+          <ValueHolder />
         </Form.Item>
       )}
       {/* Single mode */}
@@ -156,7 +183,6 @@ const UploadImage = ({
         imageUrls ? (
           <div
             className="relative w-[125px] h-[125px] cursor-pointer"
-            // onClick={() => setOpenSetImageModal(true)}
           >
             {isDoc ? (
               <DocTile url={imageUrls} />
@@ -165,12 +191,13 @@ const UploadImage = ({
                 width={125}
                 height={125}
                 src={imageUrls}
-                accessurl={!imageUrls?.startsWith("http")}
+                accessurl={!String(imageUrls).startsWith("http")}
                 alt="Preview"
                 className="w-full h-full object-cover rounded-md border border-gray-200 shadow-sm"
               />
             )}
             <button
+              type="button"
               onClick={handleDelete}
               className="absolute top-1 right-1 bg-white border border-red-500 text-red-600 p-2 rounded-lg shadow hover:bg-red-600 hover:text-white transition-colors"
             >
@@ -193,7 +220,7 @@ const UploadImage = ({
         // Multiple mode
         <div className="flex flex-wrap gap-3">
           {imageUrls.map((url: string, index: number) => (
-            <div key={index} className="relative w-[120px] h-[120px]">
+            <div key={`${url}-${index}`} className="relative w-[120px] h-[120px]">
               {isDoc ? (
                 <DocTile url={url} />
               ) : (
@@ -207,6 +234,7 @@ const UploadImage = ({
                 />
               )}
               <button
+                type="button"
                 onClick={(e) => handleDelete(e, url)}
                 className="absolute top-1 right-1 bg-white border border-red-500 text-red-600 p-2 rounded-lg shadow hover:bg-red-600 hover:text-white transition-colors"
               >

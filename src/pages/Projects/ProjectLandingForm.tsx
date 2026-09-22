@@ -1,10 +1,14 @@
-import { Button, Card, Col, Form, Input, Row, Select, Space, Switch } from "antd";
-import { ArrowLeft, ExternalLink, Plus, Trash2 } from "lucide-react";
-import { useEffect, type ReactNode } from "react";
+import { Button, Card, Col, Form, Input, Row, Select, Space, Switch, Tabs, Tooltip } from "antd";
+import { ArrowLeft, ExternalLink, Languages, Plus, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 import PageHeader from "../../components/Common/PageHeader";
 import PageMeta from "../../components/Common/PageMeta";
+import LangInput, {
+  translateToBanglaApi,
+} from "../../components/Common/LangInput";
 import UploadMedia from "../../components/shared/UploadMedia";
 import { mediaSrc } from "../../utils/mediaSrc";
 import { publicLandingUrl } from "../../utils/landing";
@@ -25,8 +29,46 @@ const SECTIONS = [
   { key: "enquire", title: "Enquire (বুকিং ফর্ম)" },
 ] as const;
 
+const TABS = [
+  { key: "publishing", title: "Publishing (প্রকাশ)" },
+  ...SECTIONS,
+] as const;
+
+type TabKey = (typeof TABS)[number]["key"];
+
+const SECTION_KEYS = new Set(SECTIONS.map((s) => s.key));
+
+const isFieldInTab = (
+  name: string | number | (string | number)[],
+  tab: TabKey,
+): boolean => {
+  const parts = Array.isArray(name) ? name : [name];
+  const root = String(parts[0] ?? "");
+  if (tab === "publishing") {
+    return root !== "sections" && !SECTION_KEYS.has(root as (typeof SECTIONS)[number]["key"]);
+  }
+  if (root === "sections") return String(parts[1] ?? "") === tab;
+  return root === tab;
+};
+
 const mediaId = (m: any) => m?._id ?? m ?? undefined;
 const mediaPreview = (m: any) => mediaSrc(m) || undefined;
+
+/** Recommended upload sizes so frontend crops look clean. */
+const IMG_SIZE = {
+  hero: "Recommended: 2400×1600 (3:2) or 2560×1440 (16:9). Full-bleed background — keep subject center-right.",
+  about: "Recommended: 1200×1500 (4:5 portrait). Side panel, object-cover.",
+  residences: "Recommended: 1600×1200 (4:3). Main viewer + thumbs; lightbox crops to 16:9 — keep content centered.",
+  elevation: "Recommended: 1920×1080 (16:9). Elevation stage; keep facade centered.",
+  gallery: "Recommended: 1920×1080 (16:9). Main viewer is 16:9.",
+  filmPoster: "Recommended: 1080×1920 (9:16 vertical). Card poster before play.",
+  avatar: "Recommended: 400×400 (1:1). Shown as a small circle — face centered.",
+  reviewPoster: "Recommended: 720×1280 (9:16 vertical). Small side thumb.",
+} as const;
+
+const imgHint = (text: string) => (
+  <span className="text-xs text-secondary-500">{text}</span>
+);
 
 const stripPreview = (value: unknown): unknown => {
   if (Array.isArray(value)) return value.map(stripPreview);
@@ -41,31 +83,136 @@ const stripPreview = (value: unknown): unknown => {
   return out;
 };
 
+/** Collect every `…Bn` field and its English sibling under a form value tree. */
+function collectBnPairs(
+  value: unknown,
+  path: (string | number)[] = [],
+): { en: (string | number)[]; bn: (string | number)[] }[] {
+  if (Array.isArray(value)) {
+    return value.flatMap((item, index) =>
+      collectBnPairs(item, [...path, index]),
+    );
+  }
+  if (!value || typeof value !== "object") return [];
+
+  const pairs: { en: (string | number)[]; bn: (string | number)[] }[] = [];
+  const record = value as Record<string, unknown>;
+  for (const [key, entry] of Object.entries(record)) {
+    if (key.endsWith("Bn")) {
+      const enKey = key.slice(0, -2);
+      if (enKey in record && typeof record[enKey] === "string") {
+        pairs.push({ en: [...path, enKey], bn: [...path, key] });
+      }
+      continue;
+    }
+    pairs.push(...collectBnPairs(entry, [...path, key]));
+  }
+  return pairs;
+}
+
 function Pair({
   en,
   bn,
   label,
   rows,
+  pathPrefix,
 }: {
   en: (string | number)[];
   bn: (string | number)[];
   label: string;
   rows?: number;
+  pathPrefix?: (string | number)[];
 }) {
-  const Field = rows ? Input.TextArea : Input;
+  const form = Form.useFormInstance();
   return (
     <Row gutter={16}>
       <Col xs={24} md={12}>
-        <Form.Item name={en} label={`${label} (EN)`}>
-          <Field rows={rows} placeholder={`${label} in English`} />
-        </Form.Item>
+        <LangInput
+          form={form}
+          lang="en"
+          name={en}
+          pathPrefix={pathPrefix}
+          label={`${label} (EN)`}
+          placeholder={`${label} in English`}
+          isTextArea={!!rows}
+          rows={rows}
+        />
       </Col>
       <Col xs={24} md={12}>
-        <Form.Item name={bn} label={`${label} (BN)`}>
-          <Field rows={rows} placeholder={`${label} বাংলায়`} />
-        </Form.Item>
+        <LangInput
+          form={form}
+          lang="bn"
+          name={bn}
+          sourceFieldName={en}
+          pathPrefix={pathPrefix}
+          label={`${label} (BN)`}
+          placeholder={`${label} বাংলায়`}
+          isTextArea={!!rows}
+          rows={rows}
+        />
       </Col>
     </Row>
+  );
+}
+
+function TranslateSectionButton({
+  sectionKey,
+}: {
+  /** When set, walk that section. When omitted, only publishing meta fields. */
+  sectionKey?: string;
+}) {
+  const form = Form.useFormInstance();
+  const [busy, setBusy] = useState(false);
+
+  const onTranslateAll = async () => {
+    setBusy(true);
+    let count = 0;
+    try {
+      const pairs = sectionKey
+        ? collectBnPairs(form.getFieldValue(sectionKey), [sectionKey])
+        : collectBnPairs(
+            form.getFieldsValue([
+              "metaTitle",
+              "metaTitleBn",
+              "metaDescription",
+              "metaDescriptionBn",
+              "navEnquire",
+              "navEnquireBn",
+            ]),
+          );
+
+      for (const pair of pairs) {
+        const enVal = String(form.getFieldValue(pair.en) || "").trim();
+        if (!enVal) continue;
+        const bnText = await translateToBanglaApi(enVal);
+        if (bnText) {
+          form.setFieldValue(pair.bn, bnText);
+          count++;
+        }
+      }
+
+      if (count > 0) {
+        toast.success(`${count}টি ফিল্ড বাংলায় অনুবাদ করা হয়েছে`);
+      } else {
+        toast.info("অনুবাদ করার মতো কোনো ইংরেজি টেক্সট পাওয়া যায়নি");
+      }
+    } catch {
+      toast.error("অনুবাদ করতে সমস্যা হয়েছে");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Tooltip title="এই ট্যাবের সব ইংরেজি ফিল্ড বাংলায় অনুবাদ করুন">
+      <Button
+        icon={<Languages className="h-4 w-4" />}
+        loading={busy}
+        onClick={onTranslateAll}
+      >
+        সবগুলো বাংলা করুন
+      </Button>
+    </Tooltip>
   );
 }
 
@@ -76,7 +223,10 @@ function ListEditor({
 }: {
   name: (string | number)[];
   addLabel: string;
-  children: (fieldName: number) => ReactNode;
+  children: (
+    fieldName: number,
+    pathPrefix: (string | number)[],
+  ) => ReactNode;
 }) {
   return (
     <Form.List name={name}>
@@ -95,7 +245,7 @@ function ListEditor({
                   onClick={() => remove(field.name)}
                 />
               </div>
-              {children(field.name)}
+              {children(field.name, name)}
             </div>
           ))}
           <Button type="dashed" onClick={() => add({})} icon={<Plus className="h-4 w-4" />}>
@@ -119,10 +269,7 @@ function Block({
   children: ReactNode;
 }) {
   return (
-    <section
-      id={sectionKey ? `landing-${sectionKey}` : undefined}
-      className="mt-2 scroll-mt-6 border-t border-gray-200 pt-6"
-    >
+    <section>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="font-heading text-base font-semibold text-secondary-900">
@@ -130,15 +277,18 @@ function Block({
           </h3>
           <p className="mt-0.5 text-xs text-secondary-500">{hint}</p>
         </div>
-        {sectionKey ? (
-          <Form.Item
-            name={["sections", sectionKey, "visible"]}
-            valuePropName="checked"
-            className="mb-0"
-          >
-            <Switch checkedChildren="Show" unCheckedChildren="Hide" />
-          </Form.Item>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          {sectionKey ? <TranslateSectionButton sectionKey={sectionKey} /> : null}
+          {sectionKey ? (
+            <Form.Item
+              name={["sections", sectionKey, "visible"]}
+              valuePropName="checked"
+              className="mb-0"
+            >
+              <Switch checkedChildren="Show" unCheckedChildren="Hide" />
+            </Form.Item>
+          ) : null}
+        </div>
       </div>
       {children}
     </section>
@@ -155,8 +305,20 @@ interface Props {
 const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<TabKey>("publishing");
+  const [submitting, setSubmitting] = useState(false);
+  const hydratedFor = useRef<string | null>(null);
+  const panelClass = (key: TabKey) =>
+    activeTab === key ? "block" : "hidden";
+  const busy = saving || submitting;
 
   useEffect(() => {
+    const projectId = project?._id ? String(project._id) : "";
+    // Hydrate once per project so a save/refetch does not wipe in-progress
+    // uploads (and break newly added image previews).
+    if (!projectId || hydratedFor.current === projectId) return;
+    hydratedFor.current = projectId;
+
     const landing = initial || {};
     const views = (landing.elevation?.views || []).map((view: any) => ({
       ...view,
@@ -180,6 +342,10 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
       poster: mediaId(item.poster),
       posterUrl: mediaPreview(item.poster),
     }));
+
+    const residencePairs = (landing.residences?.images || [])
+      .map((img: any) => ({ id: mediaId(img), url: mediaPreview(img) }))
+      .filter((p: { id: any; url: string | undefined }) => p.id && p.url);
 
     form.setFieldsValue({
       path: landing.path || project?.slug || "",
@@ -212,8 +378,8 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
       },
       residences: {
         ...landing.residences,
-        images: (landing.residences?.images || []).map(mediaId),
-        imageUrls: (landing.residences?.images || []).map(mediaPreview).filter(Boolean),
+        images: residencePairs.map((p: { id: any }) => p.id),
+        imageUrls: residencePairs.map((p: { url: string }) => p.url),
         highlights: landing.residences?.highlights || [],
         unit: landing.residences?.unit || {},
       },
@@ -230,8 +396,50 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
     });
   }, [initial, project, form]);
 
-  const handleFinish = async (values: any) => {
-    await onSubmit(stripPreview(values));
+  const handleSave = async () => {
+    setSubmitting(true);
+    try {
+      const allFields = form.getFieldsError();
+
+      // Drop leftover errors from other tabs so they don't confuse the UI.
+      const foreign = allFields.filter((f) => !isFieldInTab(f.name, activeTab));
+      if (foreign.length) {
+        form.setFields(foreign.map((f) => ({ name: f.name, errors: [] })));
+      }
+
+      const toValidate = allFields
+        .map((f) => f.name)
+        .filter((name) => isFieldInTab(name, activeTab));
+
+      // Publishing: path is always required even if not yet in error list.
+      if (activeTab === "publishing") {
+        const hasPath = toValidate.some(
+          (n) => (Array.isArray(n) ? n[0] : n) === "path",
+        );
+        if (!hasPath) toValidate.push(["path"]);
+      }
+
+      if (toValidate.length) {
+        await form.validateFields(toValidate);
+      }
+
+      const values = form.getFieldsValue(true);
+      await onSubmit(stripPreview(values));
+    } catch (err: any) {
+      const errorFields = err?.errorFields as
+        | { name: (string | number)[]; errors: string[] }[]
+        | undefined;
+      // Stay on the current tab — only show errors for this tab.
+      const msg =
+        errorFields?.find((f) => isFieldInTab(f.name, activeTab))?.errors?.[0] ||
+        errorFields?.[0]?.errors?.[0] ||
+        err?.data?.message ||
+        err?.message ||
+        "Could not save the landing page";
+      toast.error(msg, { position: "top-center" });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const path = Form.useWatch("path", form);
@@ -268,96 +476,105 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
       <Form
         form={form}
         layout="vertical"
-        onFinish={handleFinish}
+        preserve
         className="mb-6"
       >
-        <Card className="border border-gray-300 rounded-lg bg-white shadow-xs mb-6">
-          <div className="mb-4">
-            <h3 className="font-heading text-base font-semibold text-secondary-900">
-              Publishing (প্রকাশ)
-            </h3>
-            <p className="mt-0.5 text-xs text-secondary-500">
-              This path is the public landing URL. Hide a section to take it off the page.
-              Empty sections stay hidden on the site.
-              {liveUrl ? (
-                <>
-                  {" "}
-                  Live:{" "}
-                  <a
-                    href={liveUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary-800 underline"
-                  >
-                    {liveUrl}
-                  </a>
-                </>
-              ) : null}
-            </p>
-          </div>
-          <nav className="mb-5 flex flex-wrap gap-2">
-            {SECTIONS.map((section) => (
-              <a
-                key={section.key}
-                href={`#landing-${section.key}`}
-                className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-secondary-700 hover:border-primary-300 hover:text-primary-800"
-                onClick={(event) => {
-                  event.preventDefault();
-                  document
-                    .getElementById(`landing-${section.key}`)
-                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
-              >
-                {section.title}
-              </a>
-            ))}
-          </nav>
-          <Row gutter={16}>
-            <Col xs={24} md={10}>
-              <Form.Item
-                name="path"
-                label="Landing path"
-                rules={[{ required: true, message: "Path is required" }]}
-              >
-                <Input placeholder="zoom-al-zahra" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={6}>
-              <Form.Item name="isActive" label="Published" valuePropName="checked">
-                <Switch />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="facebookUrl" label="Facebook URL">
-                <Input placeholder="https://facebook.com/..." />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="phonePrimary" label="Primary phone">
-                <Input placeholder="01711-250406" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="phoneSecondary" label="Secondary phone">
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="whatsapp" label="WhatsApp">
-                <Input />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Pair en={["metaTitle"]} bn={["metaTitleBn"]} label="Meta title" />
-          <Pair en={["metaDescription"]} bn={["metaDescriptionBn"]} label="Meta description" rows={2} />
-          <Pair en={["navEnquire"]} bn={["navEnquireBn"]} label="Header Book label" />
+        <div className="sticky top-0 z-20 mb-4 rounded-lg border border-gray-300 bg-white/95 px-3 pt-2 shadow-sm backdrop-blur-md">
+          <Tabs
+            activeKey={activeTab}
+            onChange={(key) => {
+              setActiveTab(key as TabKey);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            size="small"
+            tabBarGutter={8}
+            items={TABS.map((tab) => ({
+              key: tab.key,
+              label: (
+                <span className="text-sm font-medium whitespace-nowrap">
+                  {tab.title}
+                </span>
+              ),
+            }))}
+          />
+        </div>
 
+        <Card className="border border-gray-300 rounded-lg bg-white shadow-xs mb-6">
+          <div className={panelClass("publishing")}>
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="font-heading text-base font-semibold text-secondary-900">
+                  Publishing (প্রকাশ)
+                </h3>
+                <p className="mt-0.5 text-xs text-secondary-500">
+                  This path is the public landing URL. Hide a section on its tab to take it off the page.
+                  Empty sections stay hidden on the site.
+                  {liveUrl ? (
+                    <>
+                      {" "}
+                      Live:{" "}
+                      <a
+                        href={liveUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary-800 underline"
+                      >
+                        {liveUrl}
+                      </a>
+                    </>
+                  ) : null}
+                </p>
+              </div>
+              <TranslateSectionButton />
+            </div>
+            <Row gutter={16}>
+              <Col xs={24} md={10}>
+                <Form.Item
+                  name="path"
+                  label="Landing path"
+                  rules={[{ required: true, message: "Path is required" }]}
+                >
+                  <Input placeholder="zoom-al-zahra" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={6}>
+                <Form.Item name="isActive" label="Published" valuePropName="checked">
+                  <Switch />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={8}>
+                <Form.Item name="facebookUrl" label="Facebook URL">
+                  <Input placeholder="https://facebook.com/..." />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={8}>
+                <Form.Item name="phonePrimary" label="Primary phone">
+                  <Input placeholder="01711-250406" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={8}>
+                <Form.Item name="phoneSecondary" label="Secondary phone">
+                  <Input />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={8}>
+                <Form.Item name="whatsapp" label="WhatsApp">
+                  <Input />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Pair en={["metaTitle"]} bn={["metaTitleBn"]} label="Meta title" />
+            <Pair en={["metaDescription"]} bn={["metaDescriptionBn"]} label="Meta description" rows={2} />
+            <Pair en={["navEnquire"]} bn={["navEnquireBn"]} label="Header Book label" />
+          </div>
+
+          <div className={panelClass("hero")}>
           <Block
             sectionKey="hero"
             title="Hero (হিরো)"
             hint="The first screen: photo, title, location and the two buttons."
           >
-                  <Form.Item label="Hero image">
+                  <Form.Item label="Hero image" extra={imgHint(IMG_SIZE.hero)}>
                     <UploadMedia form={form} fieldPath={["hero", "imageUrl"] as any} idFieldPath={["hero", "image"]} type="image" />
                   </Form.Item>
                   <Pair en={["hero", "badge"]} bn={["hero", "badgeBn"]} label="Badge" />
@@ -370,10 +587,10 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                   <Pair en={["hero", "ctaSecondary"]} bn={["hero", "ctaSecondaryBn"]} label="Secondary CTA" />
                   <p className="mb-2 text-sm font-medium">Stats</p>
                   <ListEditor name={["hero", "stats"]} addLabel="Add stat">
-                    {(n) => (
+                    {(n, listPath) => (
                       <>
-                        <Pair en={[n, "value"]} bn={[n, "valueBn"]} label="Value" />
-                        <Pair en={[n, "label"]} bn={[n, "labelBn"]} label="Label" />
+                        <Pair pathPrefix={listPath} en={[n, "value"]} bn={[n, "valueBn"]} label="Value" />
+                        <Pair pathPrefix={listPath} en={[n, "label"]} bn={[n, "labelBn"]} label="Label" />
                         <Form.Item name={[n, "icon"]} label="Icon">
                           <Input placeholder='fa-solid fa-building' />
                         </Form.Item>
@@ -381,23 +598,25 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                     )}
                   </ListEditor>
           </Block>
+          </div>
 
+          <div className={panelClass("about")}>
           <Block
             sectionKey="about"
             title="About (প্রকল্প)"
             hint="The project story, the side photo and the points beside it."
           >
-                  <Form.Item label="Side image">
+                  <Form.Item label="Side image" extra={imgHint(IMG_SIZE.about)}>
                     <UploadMedia form={form} fieldPath={["about", "imageUrl"] as any} idFieldPath={["about", "image"]} type="image" />
                   </Form.Item>
                   <Pair en={["about", "eyebrow"]} bn={["about", "eyebrowBn"]} label="Eyebrow" />
                   <Pair en={["about", "title"]} bn={["about", "titleBn"]} label="Title" />
                   <Pair en={["about", "body"]} bn={["about", "bodyBn"]} label="Body" rows={4} />
                   <ListEditor name={["about", "points"]} addLabel="Add point">
-                    {(n) => (
+                    {(n, listPath) => (
                       <>
-                        <Pair en={[n, "title"]} bn={[n, "titleBn"]} label="Title" />
-                        <Pair en={[n, "body"]} bn={[n, "bodyBn"]} label="Body" rows={2} />
+                        <Pair pathPrefix={listPath} en={[n, "title"]} bn={[n, "titleBn"]} label="Title" />
+                        <Pair pathPrefix={listPath} en={[n, "body"]} bn={[n, "bodyBn"]} label="Body" rows={2} />
                         <Form.Item name={[n, "icon"]} label="Icon">
                           <Input placeholder="fa-solid fa-handshake" />
                         </Form.Item>
@@ -405,13 +624,15 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                     )}
                   </ListEditor>
           </Block>
+          </div>
 
+          <div className={panelClass("residences")}>
           <Block
             sectionKey="residences"
             title="Residences (ফ্ল্যাট)"
             hint="Flat photos, the featured unit and its highlights."
           >
-                  <Form.Item label="Residence images">
+                  <Form.Item label="Residence images" extra={imgHint(IMG_SIZE.residences)}>
                     <UploadMedia form={form} fieldPath={["residences", "imageUrls"] as any} idFieldPath={["residences", "images"]} mode="multiple" type="image" />
                   </Form.Item>
                   <Pair en={["residences", "eyebrow"]} bn={["residences", "eyebrowBn"]} label="Eyebrow" />
@@ -428,10 +649,10 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                   <Pair en={["residences", "unit", "price"]} bn={["residences", "unit", "priceBn"]} label="Price note" />
                   <Pair en={["residences", "unit", "note"]} bn={["residences", "unit", "noteBn"]} label="Note" rows={2} />
                   <ListEditor name={["residences", "highlights"]} addLabel="Add highlight">
-                    {(n) => (
+                    {(n, listPath) => (
                       <>
-                        <Pair en={[n, "label"]} bn={[n, "labelBn"]} label="Label" />
-                        <Pair en={[n, "value"]} bn={[n, "valueBn"]} label="Value" />
+                        <Pair pathPrefix={listPath} en={[n, "label"]} bn={[n, "labelBn"]} label="Label" />
+                        <Pair pathPrefix={listPath} en={[n, "value"]} bn={[n, "valueBn"]} label="Value" />
                         <Form.Item name={[n, "icon"]} label="Icon">
                           <Input />
                         </Form.Item>
@@ -439,7 +660,9 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                     )}
                   </ListEditor>
           </Block>
+          </div>
 
+          <div className={panelClass("elevation")}>
           <Block
             sectionKey="elevation"
             title="Elevation (এলিভেশন)"
@@ -451,11 +674,11 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                   <Pair en={["elevation", "preview"]} bn={["elevation", "previewBn"]} label="Preview label" />
                   <Pair en={["elevation", "close"]} bn={["elevation", "closeBn"]} label="Close label" />
                   <ListEditor name={["elevation", "views"]} addLabel="Add view">
-                    {(n) => (
+                    {(n, listPath) => (
                       <>
-                        <Pair en={[n, "label"]} bn={[n, "labelBn"]} label="Label" />
-                        <Pair en={[n, "hint"]} bn={[n, "hintBn"]} label="Hint" />
-                        <Form.Item label="Image">
+                        <Pair pathPrefix={listPath} en={[n, "label"]} bn={[n, "labelBn"]} label="Label" />
+                        <Pair pathPrefix={listPath} en={[n, "hint"]} bn={[n, "hintBn"]} label="Hint" />
+                        <Form.Item label="Image" extra={imgHint(IMG_SIZE.elevation)}>
                           <UploadMedia
                             form={form}
                             fieldPath={["elevation", "views", n, "imageUrl"] as any}
@@ -467,7 +690,9 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                     )}
                   </ListEditor>
           </Block>
+          </div>
 
+          <div className={panelClass("films")}>
           <Block
             sectionKey="films"
             title="Films (ফিল্ম)"
@@ -478,10 +703,10 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                   <Pair en={["films", "description"]} bn={["films", "descriptionBn"]} label="Description" rows={3} />
                   <Pair en={["films", "play"]} bn={["films", "playBn"]} label="Play label" />
                   <ListEditor name={["films", "items"]} addLabel="Add film">
-                    {(n) => (
+                    {(n, listPath) => (
                       <>
-                        <Pair en={[n, "title"]} bn={[n, "titleBn"]} label="Title" />
-                        <Pair en={[n, "caption"]} bn={[n, "captionBn"]} label="Caption" />
+                        <Pair pathPrefix={listPath} en={[n, "title"]} bn={[n, "titleBn"]} label="Title" />
+                        <Pair pathPrefix={listPath} en={[n, "caption"]} bn={[n, "captionBn"]} label="Caption" />
                         <Form.Item name={[n, "url"]} label="Video URL">
                           <Input placeholder="Facebook or YouTube URL" />
                         </Form.Item>
@@ -494,7 +719,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                             ]}
                           />
                         </Form.Item>
-                        <Form.Item label="Poster">
+                        <Form.Item label="Poster" extra={imgHint(IMG_SIZE.filmPoster)}>
                           <UploadMedia
                             form={form}
                             fieldPath={["films", "items", n, "posterUrl"] as any}
@@ -506,7 +731,9 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                     )}
                   </ListEditor>
           </Block>
+          </div>
 
+          <div className={panelClass("amenities")}>
           <Block
             sectionKey="amenities"
             title="Amenities (সুবিধা)"
@@ -516,10 +743,10 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                   <Pair en={["amenities", "title"]} bn={["amenities", "titleBn"]} label="Title" />
                   <Pair en={["amenities", "description"]} bn={["amenities", "descriptionBn"]} label="Description" rows={3} />
                   <ListEditor name={["amenities", "items"]} addLabel="Add amenity">
-                    {(n) => (
+                    {(n, listPath) => (
                       <>
-                        <Pair en={[n, "title"]} bn={[n, "titleBn"]} label="Title" />
-                        <Pair en={[n, "body"]} bn={[n, "bodyBn"]} label="Body" rows={2} />
+                        <Pair pathPrefix={listPath} en={[n, "title"]} bn={[n, "titleBn"]} label="Title" />
+                        <Pair pathPrefix={listPath} en={[n, "body"]} bn={[n, "bodyBn"]} label="Body" rows={2} />
                         <Form.Item name={[n, "icon"]} label="Icon">
                           <Input />
                         </Form.Item>
@@ -527,7 +754,9 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                     )}
                   </ListEditor>
           </Block>
+          </div>
 
+          <div className={panelClass("gallery")}>
           <Block
             sectionKey="gallery"
             title="Gallery (গ্যালারি)"
@@ -538,10 +767,10 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                   <Pair en={["gallery", "open"]} bn={["gallery", "openBn"]} label="Open label" />
                   <Pair en={["gallery", "close"]} bn={["gallery", "closeBn"]} label="Close label" />
                   <ListEditor name={["gallery", "shots"]} addLabel="Add photo">
-                    {(n) => (
+                    {(n, listPath) => (
                       <>
-                        <Pair en={[n, "label"]} bn={[n, "labelBn"]} label="Label" />
-                        <Form.Item label="Image">
+                        <Pair pathPrefix={listPath} en={[n, "label"]} bn={[n, "labelBn"]} label="Label" />
+                        <Form.Item label="Image" extra={imgHint(IMG_SIZE.gallery)}>
                           <UploadMedia
                             form={form}
                             fieldPath={["gallery", "shots", n, "imageUrl"] as any}
@@ -553,7 +782,9 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                     )}
                   </ListEditor>
           </Block>
+          </div>
 
+          <div className={panelClass("location")}>
           <Block
             sectionKey="location"
             title="Location (লোকেশন)"
@@ -571,15 +802,17 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                   <Pair en={["location", "mapOpen"]} bn={["location", "mapOpenBn"]} label="Open label" />
                   <Pair en={["location", "mapHint"]} bn={["location", "mapHintBn"]} label="Map hint" />
                   <ListEditor name={["location", "facts"]} addLabel="Add fact">
-                    {(n) => (
+                    {(n, listPath) => (
                       <>
-                        <Pair en={[n, "label"]} bn={[n, "labelBn"]} label="Label" />
-                        <Pair en={[n, "value"]} bn={[n, "valueBn"]} label="Value" />
+                        <Pair pathPrefix={listPath} en={[n, "label"]} bn={[n, "labelBn"]} label="Label" />
+                        <Pair pathPrefix={listPath} en={[n, "value"]} bn={[n, "valueBn"]} label="Value" />
                       </>
                     )}
                   </ListEditor>
           </Block>
+          </div>
 
+          <div className={panelClass("process")}>
           <Block
             sectionKey="process"
             title="Process (প্রক্রিয়া)"
@@ -588,15 +821,17 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                   <Pair en={["process", "eyebrow"]} bn={["process", "eyebrowBn"]} label="Eyebrow" />
                   <Pair en={["process", "title"]} bn={["process", "titleBn"]} label="Title" />
                   <ListEditor name={["process", "steps"]} addLabel="Add step">
-                    {(n) => (
+                    {(n, listPath) => (
                       <>
-                        <Pair en={[n, "title"]} bn={[n, "titleBn"]} label="Title" />
-                        <Pair en={[n, "body"]} bn={[n, "bodyBn"]} label="Body" rows={2} />
+                        <Pair pathPrefix={listPath} en={[n, "title"]} bn={[n, "titleBn"]} label="Title" />
+                        <Pair pathPrefix={listPath} en={[n, "body"]} bn={[n, "bodyBn"]} label="Body" rows={2} />
                       </>
                     )}
                   </ListEditor>
           </Block>
+          </div>
 
+          <div className={panelClass("cta")}>
           <Block
             sectionKey="cta"
             title="CTA band (কল ব্যান্ড)"
@@ -609,7 +844,9 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                   <Pair en={["cta", "call"]} bn={["cta", "callBn"]} label="Call button" />
                   <Pair en={["cta", "whatsapp"]} bn={["cta", "whatsappBn"]} label="WhatsApp button" />
           </Block>
+          </div>
 
+          <div className={panelClass("reviews")}>
           <Block
             sectionKey="reviews"
             title="Reviews (রিভিউ)"
@@ -621,15 +858,15 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                   <Pair en={["reviews", "play"]} bn={["reviews", "playBn"]} label="Play label" />
                   <Pair en={["reviews", "close"]} bn={["reviews", "closeBn"]} label="Close label" />
                   <ListEditor name={["reviews", "items"]} addLabel="Add review">
-                    {(n) => (
+                    {(n, listPath) => (
                       <>
-                        <Pair en={[n, "name"]} bn={[n, "nameBn"]} label="Name" />
-                        <Pair en={[n, "role"]} bn={[n, "roleBn"]} label="Role" />
-                        <Pair en={[n, "quote"]} bn={[n, "quoteBn"]} label="Quote" rows={3} />
+                        <Pair pathPrefix={listPath} en={[n, "name"]} bn={[n, "nameBn"]} label="Name" />
+                        <Pair pathPrefix={listPath} en={[n, "role"]} bn={[n, "roleBn"]} label="Role" />
+                        <Pair pathPrefix={listPath} en={[n, "quote"]} bn={[n, "quoteBn"]} label="Quote" rows={3} />
                         <Form.Item name={[n, "videoUrl"]} label="Video URL">
                           <Input />
                         </Form.Item>
-                        <Form.Item label="Avatar">
+                        <Form.Item label="Avatar" extra={imgHint(IMG_SIZE.avatar)}>
                           <UploadMedia
                             form={form}
                             fieldPath={["reviews", "items", n, "avatarUrl"] as any}
@@ -637,7 +874,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                             type="image"
                           />
                         </Form.Item>
-                        <Form.Item label="Video poster">
+                        <Form.Item label="Video poster" extra={imgHint(IMG_SIZE.reviewPoster)}>
                           <UploadMedia
                             form={form}
                             fieldPath={["reviews", "items", n, "posterUrl"] as any}
@@ -649,7 +886,9 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                     )}
                   </ListEditor>
           </Block>
+          </div>
 
+          <div className={panelClass("faq")}>
           <Block
             sectionKey="faq"
             title="FAQ"
@@ -659,15 +898,17 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                   <Pair en={["faq", "title"]} bn={["faq", "titleBn"]} label="Title" />
                   <Pair en={["faq", "description"]} bn={["faq", "descriptionBn"]} label="Description" rows={3} />
                   <ListEditor name={["faq", "items"]} addLabel="Add question">
-                    {(n) => (
+                    {(n, listPath) => (
                       <>
-                        <Pair en={[n, "question"]} bn={[n, "questionBn"]} label="Question" rows={2} />
-                        <Pair en={[n, "answer"]} bn={[n, "answerBn"]} label="Answer" rows={3} />
+                        <Pair pathPrefix={listPath} en={[n, "question"]} bn={[n, "questionBn"]} label="Question" rows={2} />
+                        <Pair pathPrefix={listPath} en={[n, "answer"]} bn={[n, "answerBn"]} label="Answer" rows={3} />
                       </>
                     )}
                   </ListEditor>
           </Block>
+          </div>
 
+          <div className={panelClass("enquire")}>
           <Block
             sectionKey="enquire"
             title="Enquire (বুকিং ফর্ম)"
@@ -694,11 +935,19 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                   <Pair en={["enquire", "form", "successTitle"]} bn={["enquire", "form", "successTitleBn"]} label="Success title" />
                   <Pair en={["enquire", "form", "successBody"]} bn={["enquire", "form", "successBodyBn"]} label="Success body" rows={2} />
           </Block>
+          </div>
         </Card>
 
         <div className="sticky bottom-4 z-10 flex items-center justify-end gap-3 rounded-lg border border-gray-300 bg-white/95 p-4 shadow-md backdrop-blur-md">
-          <Button onClick={() => navigate("/projects")}>Cancel</Button>
-          <Button type="primary" htmlType="submit" loading={saving} size="large">
+          <Button onClick={() => navigate("/projects")} disabled={busy}>
+            Cancel
+          </Button>
+          <Button
+            type="primary"
+            loading={busy}
+            size="large"
+            onClick={handleSave}
+          >
             Save landing page
           </Button>
         </div>
