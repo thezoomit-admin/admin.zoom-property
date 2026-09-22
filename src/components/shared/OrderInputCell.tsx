@@ -14,12 +14,12 @@ export const OrderInputCell = ({
   index,
   onUpdateOrder,
 }: OrderInputCellProps) => {
-  const currentOrder = typeof record.order === "number" ? record.order : index + 1;
+  const currentOrder = typeof record.order === "number" ? record.order : index;
   const [val, setVal] = useState<number | null>(currentOrder);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setVal(typeof record.order === "number" ? record.order : index + 1);
+    setVal(typeof record.order === "number" ? record.order : index);
   }, [record.order, index]);
 
   const isChanged = val !== null && val !== undefined && val !== record.order;
@@ -38,7 +38,7 @@ export const OrderInputCell = ({
   };
 
   const handleMove = async (targetOrder: number) => {
-    if (targetOrder < 1 || loading) return;
+    if (targetOrder < 0 || loading) return;
     setVal(targetOrder);
     setLoading(true);
     try {
@@ -55,7 +55,7 @@ export const OrderInputCell = ({
     <div className="flex items-center justify-center gap-1">
       <InputNumber
         size="small"
-        min={1}
+        min={0}
         value={val}
         onChange={(v) => setVal(v)}
         onPressEnter={handleSaveOrder}
@@ -80,7 +80,7 @@ export const OrderInputCell = ({
         <Button
           type="text"
           size="small"
-          disabled={loading || currentOrder <= 1}
+          disabled={loading || currentOrder <= 0}
           icon={<ArrowUp className="h-3.5 w-3.5" />}
           onClick={() => handleMove(currentOrder - 1)}
           className="!p-0.5 !h-5 !w-5 flex items-center justify-center hover:bg-gray-200 rounded cursor-pointer"
