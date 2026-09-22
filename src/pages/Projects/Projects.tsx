@@ -1,7 +1,7 @@
 import { Button, Input, Modal, Progress, Select, Space, Switch, Tag, Tooltip } from "antd";
-import { Edit, LayoutTemplate, Plus, Search, Trash2 } from "lucide-react";
+import { Edit, ExternalLink, LayoutTemplate, Plus, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import PageHeader from "../../components/Common/PageHeader";
@@ -17,6 +17,7 @@ import {
   useGetProjectsQuery,
   useUpdateProjectMutation,
 } from "../../redux/features/project/projectApi";
+import { publicLandingUrl } from "../../utils/landing";
 import { STAGE_COLOUR, STAGES } from "./projectMeta";
 import brand from "../../theme/brand";
 
@@ -134,12 +135,27 @@ const Projects = () => {
                 />
               </div>
             ) : null}
-            <div>
-              <p className="font-medium text-secondary-800">{name}</p>
+            <div className="min-w-0">
+              <Link
+                to={`/projects/${r._id}/landing`}
+                className="font-medium text-secondary-800 hover:text-primary-800 hover:underline"
+              >
+                {name}
+              </Link>
               <p className="text-xs text-secondary-500">
                 {r.area?.name ? `${r.area.name} · ` : ""}
                 {r.developer}
               </p>
+              {r.landing?.path ? (
+                <Tag
+                  color={r.landing.isActive ? "green" : "default"}
+                  className="mt-1"
+                >
+                  {r.landing.isActive ? "Live" : "Draft"} · /{r.landing.path}
+                </Tag>
+              ) : (
+                <p className="mt-0.5 text-xs text-secondary-400">No landing yet</p>
+              )}
             </div>
           </div>
         );
@@ -276,34 +292,54 @@ const Projects = () => {
       title: "Actions",
       key: "actions",
       fixed: "right" as const,
-      width: 168,
-      render: (_: unknown, r: any) => (
-        <Space>
-          <PermissionGate module="Projects" action="Update">
-            <Tooltip title="Landing page">
-              <Button
-                icon={<LayoutTemplate className="h-4 w-4" />}
-                onClick={() => navigate(`/projects/${r._id}/landing`)}
-              />
-            </Tooltip>
-            <Tooltip title="Edit">
-              <Button
-                icon={<Edit className="h-4 w-4" />}
-                onClick={() => navigate(`/projects/edit/${r._id}`)}
-              />
-            </Tooltip>
-          </PermissionGate>
-          <PermissionGate module="Projects" action="Delete">
-            <Tooltip title="Delete">
-              <Button
-                danger
-                icon={<Trash2 className="h-4 w-4" />}
-                onClick={() => onDelete(r._id, r.name)}
-              />
-            </Tooltip>
-          </PermissionGate>
-        </Space>
-      ),
+      width: 228,
+      render: (_: unknown, r: any) => {
+        const liveUrl =
+          r.landing?.path && r.landing.isActive
+            ? publicLandingUrl(r.landing.path)
+            : "";
+        return (
+          <Space>
+            <PermissionGate module="Projects" action="Update">
+              <Tooltip title="Open landing page">
+                <Button
+                  icon={<LayoutTemplate className="h-4 w-4" />}
+                  onClick={() => navigate(`/projects/${r._id}/landing`)}
+                >
+                  Landing
+                </Button>
+              </Tooltip>
+            </PermissionGate>
+            {liveUrl ? (
+              <Tooltip title="View live page">
+                <Button
+                  icon={<ExternalLink className="h-4 w-4" />}
+                  href={liveUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              </Tooltip>
+            ) : null}
+            <PermissionGate module="Projects" action="Update">
+              <Tooltip title="Edit project">
+                <Button
+                  icon={<Edit className="h-4 w-4" />}
+                  onClick={() => navigate(`/projects/edit/${r._id}`)}
+                />
+              </Tooltip>
+            </PermissionGate>
+            <PermissionGate module="Projects" action="Delete">
+              <Tooltip title="Delete">
+                <Button
+                  danger
+                  icon={<Trash2 className="h-4 w-4" />}
+                  onClick={() => onDelete(r._id, r.name)}
+                />
+              </Tooltip>
+            </PermissionGate>
+          </Space>
+        );
+      },
     },
   ];
 

@@ -4,4 +4,5 @@ export const config = {
   api_url: import.meta.env.VITE_PUBLIC_API_URL,
   image_access_url: import.meta.env.VITE_PUBLIC_IMAGE_ACCESS_URL,
   tiny_api_key: import.meta.env.VITE_PUBLIC_TINY_API_KEY,
+  site_url: import.meta.env.VITE_PUBLIC_SITE_URL,
 };

@@ -1,5 +1,5 @@
-import { Button, Card, Col, Collapse, Form, Input, Row, Select, Switch } from "antd";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { Button, Card, Col, Collapse, Form, Input, Row, Select, Space, Switch } from "antd";
+import { ArrowLeft, ExternalLink, Plus, Trash2 } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -7,6 +7,7 @@ import PageHeader from "../../components/Common/PageHeader";
 import PageMeta from "../../components/Common/PageMeta";
 import UploadMedia from "../../components/shared/UploadMedia";
 import { mediaSrc } from "../../utils/mediaSrc";
+import { publicLandingUrl } from "../../utils/landing";
 
 const SECTIONS = [
   { key: "hero", title: "Hero (হিরো)" },
@@ -195,6 +196,9 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
     await onSubmit(stripPreview(values));
   };
 
+  const path = Form.useWatch("path", form);
+  const liveUrl = publicLandingUrl(path);
+
   return (
     <div>
       <PageMeta
@@ -205,9 +209,21 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
       <PageHeader
         title={`Landing page — ${project?.name || "Project"}`}
         extra={
-          <Button icon={<ArrowLeft className="h-4 w-4" />} onClick={() => navigate("/projects")}>
-            Back
-          </Button>
+          <Space>
+            {liveUrl ? (
+              <Button
+                icon={<ExternalLink className="h-4 w-4" />}
+                href={liveUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View live
+              </Button>
+            ) : null}
+            <Button icon={<ArrowLeft className="h-4 w-4" />} onClick={() => navigate("/projects")}>
+              Back
+            </Button>
+          </Space>
         }
       />
 
@@ -221,8 +237,21 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
           <div className="mb-4">
             <h3 className="font-heading text-base font-semibold">Publishing (প্রকাশ)</h3>
             <p className="text-xs text-muted-foreground">
-              Path becomes <code>/bn/p/your-path</code> — except <code>zoomalzahara</code> which stays{" "}
-              <code>/bn/zoomalzahara</code>. Empty sections stay hidden on the site.
+              The public URL is built from this path. Empty sections stay hidden on the site.
+              {liveUrl ? (
+                <>
+                  {" "}
+                  Live:{" "}
+                  <a
+                    href={liveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary-800 underline"
+                  >
+                    {liveUrl}
+                  </a>
+                </>
+              ) : null}
             </p>
           </div>
           <Row gutter={16}>
