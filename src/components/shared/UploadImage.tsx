@@ -108,12 +108,16 @@ const UploadImage = ({
           : [];
       const rawUrls = Array.isArray(selected) ? selected : [selected];
 
+      // Keeping a pair only when it has both a url and (when ids are
+      // tracked) an id is what keeps `pathArray` and `idPathArray` the same
+      // length and in the same order — a pair added with a url but no id
+      // used to shift every id after it out of position on save.
       const pairs = rawUrls
         .map((raw, idx) => ({
           url: previewUrl(raw, items[idx]),
           id: mediaObjectId(items[idx]),
         }))
-        .filter((p) => p.url);
+        .filter((p) => p.url && (!idPathArray || p.id));
 
       const existing = imageUrls || [];
       const urlsToAdd = pairs.filter((p) => !existing.includes(p.url));
@@ -126,10 +130,9 @@ const UploadImage = ({
 
       if (idPathArray) {
         const currentIds = form.getFieldValue(idPathArray) || [];
-        const idsToAdd = urlsToAdd.map((p) => p.id).filter(Boolean);
         form.setFieldValue(idPathArray, [
           ...(Array.isArray(currentIds) ? currentIds : []),
-          ...idsToAdd,
+          ...urlsToAdd.map((p) => p.id),
         ]);
       }
     } else {
