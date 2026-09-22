@@ -12,6 +12,7 @@ const projectApi = baseApi.injectEndpoints({
           if (params.stage) q.append("stage", params.stage);
           if (params.area) q.append("area", params.area);
           if (params.activeOnly) q.append("activeOnly", "true");
+          if (params.sort) q.append("sort", params.sort);
         }
         return { url: `projects?${q.toString()}`, method: "GET" };
       },
