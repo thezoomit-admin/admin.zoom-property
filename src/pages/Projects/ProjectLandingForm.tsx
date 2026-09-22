@@ -155,7 +155,10 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
       metaDescriptionBn: landing.metaDescriptionBn,
       navEnquire: landing.navEnquire,
       navEnquireBn: landing.navEnquireBn,
-      sections: landing.sections,
+      sections: {
+        ...Object.fromEntries(SECTIONS.map((section) => [section.key, { visible: true }])),
+        ...(landing.sections || {}),
+      },
       hero: {
         ...landing.hero,
         image: mediaId(landing.hero?.image),
@@ -360,6 +363,8 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                   <Pair en={["residences", "description"]} bn={["residences", "descriptionBn"]} label="Description" rows={3} />
                   <Pair en={["residences", "featured"]} bn={["residences", "featuredBn"]} label="Featured badge" />
                   <Pair en={["residences", "cta"]} bn={["residences", "ctaBn"]} label="CTA" />
+                  <Pair en={["residences", "preview"]} bn={["residences", "previewBn"]} label="Preview label" />
+                  <Pair en={["residences", "close"]} bn={["residences", "closeBn"]} label="Close label" />
                   <Pair en={["residences", "unit", "name"]} bn={["residences", "unit", "nameBn"]} label="Unit name" />
                   <Pair en={["residences", "unit", "beds"]} bn={["residences", "unit", "bedsBn"]} label="Beds" />
                   <Pair en={["residences", "unit", "baths"]} bn={["residences", "unit", "bathsBn"]} label="Baths" />
@@ -388,6 +393,8 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                   <Pair en={["elevation", "eyebrow"]} bn={["elevation", "eyebrowBn"]} label="Eyebrow" />
                   <Pair en={["elevation", "title"]} bn={["elevation", "titleBn"]} label="Title" />
                   <Pair en={["elevation", "description"]} bn={["elevation", "descriptionBn"]} label="Description" rows={3} />
+                  <Pair en={["elevation", "preview"]} bn={["elevation", "previewBn"]} label="Preview label" />
+                  <Pair en={["elevation", "close"]} bn={["elevation", "closeBn"]} label="Close label" />
                   <ListEditor name={["elevation", "views"]} addLabel="Add view">
                     {(n) => (
                       <>
@@ -420,6 +427,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                     {(n) => (
                       <>
                         <Pair en={[n, "title"]} bn={[n, "titleBn"]} label="Title" />
+                        <Pair en={[n, "caption"]} bn={[n, "captionBn"]} label="Caption" />
                         <Form.Item name={[n, "url"]} label="Video URL">
                           <Input placeholder="Facebook or YouTube URL" />
                         </Form.Item>
@@ -475,6 +483,8 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                 <>
                   <Pair en={["gallery", "eyebrow"]} bn={["gallery", "eyebrowBn"]} label="Eyebrow" />
                   <Pair en={["gallery", "title"]} bn={["gallery", "titleBn"]} label="Title" />
+                  <Pair en={["gallery", "open"]} bn={["gallery", "openBn"]} label="Open label" />
+                  <Pair en={["gallery", "close"]} bn={["gallery", "closeBn"]} label="Close label" />
                   <ListEditor name={["gallery", "shots"]} addLabel="Add photo">
                     {(n) => (
                       <>
@@ -560,6 +570,8 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                   <Pair en={["reviews", "eyebrow"]} bn={["reviews", "eyebrowBn"]} label="Eyebrow" />
                   <Pair en={["reviews", "title"]} bn={["reviews", "titleBn"]} label="Title" />
                   <Pair en={["reviews", "description"]} bn={["reviews", "descriptionBn"]} label="Description" rows={3} />
+                  <Pair en={["reviews", "play"]} bn={["reviews", "playBn"]} label="Play label" />
+                  <Pair en={["reviews", "close"]} bn={["reviews", "closeBn"]} label="Close label" />
                   <ListEditor name={["reviews", "items"]} addLabel="Add review">
                     {(n) => (
                       <>
@@ -624,10 +636,14 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                     <Input placeholder="Zoom Al Zahara" />
                   </Form.Item>
                   <Pair en={["enquire", "form", "name"]} bn={["enquire", "form", "nameBn"]} label="Name field" />
+                  <Pair en={["enquire", "form", "namePlaceholder"]} bn={["enquire", "form", "namePlaceholderBn"]} label="Name placeholder" />
                   <Pair en={["enquire", "form", "phone"]} bn={["enquire", "form", "phoneBn"]} label="Phone field" />
                   <Pair en={["enquire", "form", "email"]} bn={["enquire", "form", "emailBn"]} label="Email field" />
+                  <Pair en={["enquire", "form", "plan"]} bn={["enquire", "form", "planBn"]} label="Plan field" />
                   <Pair en={["enquire", "form", "message"]} bn={["enquire", "form", "messageBn"]} label="Message field" />
+                  <Pair en={["enquire", "form", "messagePlaceholder"]} bn={["enquire", "form", "messagePlaceholderBn"]} label="Message placeholder" />
                   <Pair en={["enquire", "form", "submit"]} bn={["enquire", "form", "submitBn"]} label="Submit" />
+                  <Pair en={["enquire", "form", "submitting"]} bn={["enquire", "form", "submittingBn"]} label="Submitting" />
                   <Pair en={["enquire", "form", "privacy"]} bn={["enquire", "form", "privacyBn"]} label="Privacy note" rows={2} />
                   <Pair en={["enquire", "form", "successTitle"]} bn={["enquire", "form", "successTitleBn"]} label="Success title" />
                   <Pair en={["enquire", "form", "successBody"]} bn={["enquire", "form", "successBodyBn"]} label="Success body" rows={2} />
