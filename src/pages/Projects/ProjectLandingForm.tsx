@@ -1,5 +1,5 @@
 import { Button, Card, Col, Form, Input, Row, Select, Space, Switch, Tabs, Tooltip } from "antd";
-import { ArrowLeft, ExternalLink, Languages, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, Languages, Loader2, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -9,9 +9,14 @@ import PageMeta from "../../components/Common/PageMeta";
 import LangInput, {
   translateToBanglaApi,
 } from "../../components/Common/LangInput";
+import RichTextEditor from "../../components/Common/RichEditor/RichTextEditor";
 import UploadMedia from "../../components/shared/UploadMedia";
 import { mediaSrc } from "../../utils/mediaSrc";
 import { publicLandingUrl } from "../../utils/landing";
+import {
+  isEmptyRichText,
+  translateRichTextToBangla,
+} from "../../utils/richText";
 
 const SECTIONS = [
   { key: "hero", title: "Hero (হিরো)" },
@@ -27,6 +32,7 @@ const SECTIONS = [
   { key: "reviews", title: "Reviews (রিভিউ)" },
   { key: "faq", title: "FAQ" },
   { key: "enquire", title: "Enquire (বুকিং ফর্ম)" },
+  { key: "custom", title: "Custom (কাস্টম কন্টেন্ট)" },
 ] as const;
 
 const TABS = [
@@ -57,13 +63,12 @@ const mediaPreview = (m: any) => mediaSrc(m) || undefined;
 /** Recommended upload sizes so frontend crops look clean. */
 const IMG_SIZE = {
   hero: "Recommended: 2400×1600 (3:2) or 2560×1440 (16:9). Full-bleed background — keep subject center-right.",
-  about: "Recommended: 1200×1500 (4:5 portrait). Side panel, object-cover.",
-  residences: "Recommended: 1600×1200 (4:3). Main viewer + thumbs; lightbox crops to 16:9 — keep content centered.",
-  elevation: "Recommended: 1920×1080 (16:9). Elevation stage; keep facade centered.",
-  gallery: "Recommended: 1920×1080 (16:9). Main viewer is 16:9.",
-  filmPoster: "Recommended: 1080×1920 (9:16 vertical). Card poster before play.",
+  about: "Recommended: wide composite 1800×1200 (3:2) — facts + building side by side. Shown full with object-contain (no squash on mobile).",
+  residences: "Recommended: 1600×1200 (4:3) or wide banner 2000×1200. Shown full with object-contain (no crop).",
+  elevation: "Recommended: tall building 1200×1800 (2:3) or wide composite 2000×1400. Shown full with object-contain (no crop) — different from Gallery.",
+  gallery: "Recommended: 1920×1080 (16:9). Main viewer is 16:9 crop.",
+
   avatar: "Recommended: 400×400 (1:1). Shown as a small circle — face centered.",
-  reviewPoster: "Recommended: 720×1280 (9:16 vertical). Small side thumb.",
 } as const;
 
 const imgHint = (text: string) => (
@@ -184,7 +189,10 @@ function TranslateSectionButton({
       for (const pair of pairs) {
         const enVal = String(form.getFieldValue(pair.en) || "").trim();
         if (!enVal) continue;
-        const bnText = await translateToBanglaApi(enVal);
+        const looksHtml = /<[a-z][\s\S]*>/i.test(enVal);
+        const bnText = looksHtml
+          ? await translateRichTextToBangla(enVal)
+          : await translateToBanglaApi(enVal);
         if (bnText) {
           form.setFieldValue(pair.bn, bnText);
           count++;
@@ -213,6 +221,81 @@ function TranslateSectionButton({
         সবগুলো বাংলা করুন
       </Button>
     </Tooltip>
+  );
+}
+
+/** Dual TinyMCE editors for the bottom custom rich-text section. */
+function CustomBodyEditors() {
+  const form = Form.useFormInstance();
+  const [busy, setBusy] = useState(false);
+
+  const onTranslateBody = async () => {
+    const enText = form.getFieldValue(["custom", "body"]);
+    if (isEmptyRichText(enText)) {
+      toast.info("অনুবাদের জন্য আগে ইংরেজিতে লেখাটি লিখুন");
+      return;
+    }
+    setBusy(true);
+    try {
+      form.setFieldValue(
+        ["custom", "bodyBn"],
+        await translateRichTextToBangla(enText),
+      );
+      toast.success("লেখাটি বাংলায় রূপান্তর করা হয়েছে");
+    } catch {
+      toast.error("অনুবাদ করতে সমস্যা হয়েছে");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mt-2 flex flex-col gap-4">
+      <Form.Item
+        name={["custom", "body"]}
+        label="Body (English)"
+        extra={
+          <span className="text-xs text-secondary-500">
+            Use headings, lists, links and images — shown at the bottom of the
+            public landing page.
+          </span>
+        }
+      >
+        <RichTextEditor
+          placeholder="Write free-form content in English..."
+          height={420}
+        />
+      </Form.Item>
+
+      <Form.Item
+        name={["custom", "bodyBn"]}
+        label={
+          <div className="flex w-full items-center justify-between gap-2">
+            <span>Body (Bangla)</span>
+            <Tooltip title="ইংরেজি বডি থেকে বাংলায় রূপান্তর করুন">
+              <Button
+                type="link"
+                size="small"
+                className="!h-auto !px-1 !text-xs flex shrink-0 items-center gap-1 whitespace-nowrap"
+                onClick={onTranslateBody}
+                loading={busy}
+                icon={
+                  busy ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Languages className="h-3.5 w-3.5" />
+                  )
+                }
+              >
+                {busy ? "রূপান্তর হচ্ছে..." : "বাংলা করুন"}
+              </Button>
+            </Tooltip>
+          </div>
+        }
+      >
+        <RichTextEditor placeholder="বাংলায় লিখুন..." height={420} />
+      </Form.Item>
+    </div>
   );
 }
 
@@ -327,8 +410,6 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
     }));
     const films = (landing.films?.items || []).map((item: any) => ({
       ...item,
-      poster: mediaId(item.poster),
-      posterUrl: mediaPreview(item.poster),
     }));
     const shots = (landing.gallery?.shots || []).map((shot: any) => ({
       ...shot,
@@ -339,8 +420,6 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
       ...item,
       avatar: mediaId(item.avatar),
       avatarUrl: mediaPreview(item.avatar),
-      poster: mediaId(item.poster),
-      posterUrl: mediaPreview(item.poster),
     }));
 
     const residencePairs = (landing.residences?.images || [])
@@ -393,6 +472,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
       reviews: { ...landing.reviews, items: reviews },
       faq: { ...landing.faq, items: landing.faq?.items || [] },
       enquire: { ...landing.enquire, form: landing.enquire?.form || {} },
+      custom: landing.custom || {},
     });
   }, [initial, project, form]);
 
@@ -719,14 +799,6 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                             ]}
                           />
                         </Form.Item>
-                        <Form.Item label="Poster" extra={imgHint(IMG_SIZE.filmPoster)}>
-                          <UploadMedia
-                            form={form}
-                            fieldPath={["films", "items", n, "posterUrl"] as any}
-                            idFieldPath={["films", "items", n, "poster"]}
-                            type="image"
-                          />
-                        </Form.Item>
                       </>
                     )}
                   </ListEditor>
@@ -874,14 +946,6 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                             type="image"
                           />
                         </Form.Item>
-                        <Form.Item label="Video poster" extra={imgHint(IMG_SIZE.reviewPoster)}>
-                          <UploadMedia
-                            form={form}
-                            fieldPath={["reviews", "items", n, "posterUrl"] as any}
-                            idFieldPath={["reviews", "items", n, "poster"]}
-                            type="image"
-                          />
-                        </Form.Item>
                       </>
                     )}
                   </ListEditor>
@@ -934,6 +998,18 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                   <Pair en={["enquire", "form", "privacy"]} bn={["enquire", "form", "privacyBn"]} label="Privacy note" rows={2} />
                   <Pair en={["enquire", "form", "successTitle"]} bn={["enquire", "form", "successTitleBn"]} label="Success title" />
                   <Pair en={["enquire", "form", "successBody"]} bn={["enquire", "form", "successBodyBn"]} label="Success body" rows={2} />
+          </Block>
+          </div>
+
+          <div className={panelClass("custom")}>
+          <Block
+            sectionKey="custom"
+            title="Custom (কাস্টম কন্টেন্ট)"
+            hint="Bottom page section with a rich text editor — headings, lists, links, images. Place any free-form content here."
+          >
+                  <Pair en={["custom", "eyebrow"]} bn={["custom", "eyebrowBn"]} label="Eyebrow" />
+                  <Pair en={["custom", "title"]} bn={["custom", "titleBn"]} label="Title" />
+                  <CustomBodyEditors />
           </Block>
           </div>
         </Card>

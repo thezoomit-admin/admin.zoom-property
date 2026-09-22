@@ -2,7 +2,7 @@ import { config } from "../config";
 
 type MediaLike = { url?: string; key?: string; _id?: string } | string | null | undefined;
 
-const R2_PUBLIC_FALLBACK = "https://pub-5b52277bf86041a0b4872bee7a979553.r2.dev";
+const R2_PUBLIC_FALLBACK = "https://pub-fe014e73b16347aab5e799483354b483.r2.dev";
 
 /** Bare Mongo ObjectIds are not file keys — don't build a fake R2 URL. */
 const isMongoObjectId = (value: string) => /^[a-f\d]{24}$/i.test(value.trim());
