@@ -1,4 +1,4 @@
-import { Button, Card, Col, Collapse, Form, Input, Row, Select, Space, Switch } from "antd";
+import { Button, Card, Col, Form, Input, Row, Select, Space, Switch } from "antd";
 import { ArrowLeft, ExternalLink, Plus, Trash2 } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
@@ -104,6 +104,44 @@ function ListEditor({
         </div>
       )}
     </Form.List>
+  );
+}
+
+function Block({
+  title,
+  hint,
+  sectionKey,
+  children,
+}: {
+  title: string;
+  hint: string;
+  sectionKey?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      id={sectionKey ? `landing-${sectionKey}` : undefined}
+      className="mt-2 scroll-mt-6 border-t border-gray-200 pt-6"
+    >
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="font-heading text-base font-semibold text-secondary-900">
+            {title}
+          </h3>
+          <p className="mt-0.5 text-xs text-secondary-500">{hint}</p>
+        </div>
+        {sectionKey ? (
+          <Form.Item
+            name={["sections", sectionKey, "visible"]}
+            valuePropName="checked"
+            className="mb-0"
+          >
+            <Switch checkedChildren="Show" unCheckedChildren="Hide" />
+          </Form.Item>
+        ) : null}
+      </div>
+      {children}
+    </section>
   );
 }
 
@@ -231,13 +269,16 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
         form={form}
         layout="vertical"
         onFinish={handleFinish}
-        className="flex flex-col gap-6"
+        className="mb-6"
       >
-        <Card className="border border-gray-300 rounded-lg bg-white shadow-xs mb-0">
+        <Card className="border border-gray-300 rounded-lg bg-white shadow-xs mb-6">
           <div className="mb-4">
-            <h3 className="font-heading text-base font-semibold">Publishing (প্রকাশ)</h3>
-            <p className="text-xs text-muted-foreground">
-              The public URL is built from this path. Empty sections stay hidden on the site.
+            <h3 className="font-heading text-base font-semibold text-secondary-900">
+              Publishing (প্রকাশ)
+            </h3>
+            <p className="mt-0.5 text-xs text-secondary-500">
+              This path is the public landing URL. Hide a section to take it off the page.
+              Empty sections stay hidden on the site.
               {liveUrl ? (
                 <>
                   {" "}
@@ -254,6 +295,23 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
               ) : null}
             </p>
           </div>
+          <nav className="mb-5 flex flex-wrap gap-2">
+            {SECTIONS.map((section) => (
+              <a
+                key={section.key}
+                href={`#landing-${section.key}`}
+                className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-secondary-700 hover:border-primary-300 hover:text-primary-800"
+                onClick={(event) => {
+                  event.preventDefault();
+                  document
+                    .getElementById(`landing-${section.key}`)
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+              >
+                {section.title}
+              </a>
+            ))}
+          </nav>
           <Row gutter={16}>
             <Col xs={24} md={10}>
               <Form.Item
@@ -293,41 +351,12 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
           <Pair en={["metaTitle"]} bn={["metaTitleBn"]} label="Meta title" />
           <Pair en={["metaDescription"]} bn={["metaDescriptionBn"]} label="Meta description" rows={2} />
           <Pair en={["navEnquire"]} bn={["navEnquireBn"]} label="Header Book label" />
-        </Card>
 
-        <Card className="border border-gray-300 rounded-lg bg-white shadow-xs mb-0">
-          <h3 className="mb-4 font-heading text-base font-semibold">
-            Sections (সেকশন দেখান / লুকান)
-          </h3>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {SECTIONS.map((section) => (
-              <div
-                key={section.key}
-                className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2.5"
-              >
-                <span className="text-sm font-medium">{section.title}</span>
-                <Form.Item
-                  name={["sections", section.key, "visible"]}
-                  valuePropName="checked"
-                  noStyle
-                  initialValue
-                >
-                  <Switch />
-                </Form.Item>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <Collapse
-          bordered={false}
-          className="bg-transparent"
-          items={[
-            {
-              key: "hero",
-              label: "Hero",
-              children: (
-                <>
+          <Block
+            sectionKey="hero"
+            title="Hero (হিরো)"
+            hint="The first screen: photo, title, location and the two buttons."
+          >
                   <Form.Item label="Hero image">
                     <UploadMedia form={form} fieldPath={["hero", "imageUrl"] as any} idFieldPath={["hero", "image"]} type="image" />
                   </Form.Item>
@@ -351,14 +380,13 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                       </>
                     )}
                   </ListEditor>
-                </>
-              ),
-            },
-            {
-              key: "about",
-              label: "About",
-              children: (
-                <>
+          </Block>
+
+          <Block
+            sectionKey="about"
+            title="About (প্রকল্প)"
+            hint="The project story, the side photo and the points beside it."
+          >
                   <Form.Item label="Side image">
                     <UploadMedia form={form} fieldPath={["about", "imageUrl"] as any} idFieldPath={["about", "image"]} type="image" />
                   </Form.Item>
@@ -376,14 +404,13 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                       </>
                     )}
                   </ListEditor>
-                </>
-              ),
-            },
-            {
-              key: "residences",
-              label: "Residences",
-              children: (
-                <>
+          </Block>
+
+          <Block
+            sectionKey="residences"
+            title="Residences (ফ্ল্যাট)"
+            hint="Flat photos, the featured unit and its highlights."
+          >
                   <Form.Item label="Residence images">
                     <UploadMedia form={form} fieldPath={["residences", "imageUrls"] as any} idFieldPath={["residences", "images"]} mode="multiple" type="image" />
                   </Form.Item>
@@ -411,14 +438,13 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                       </>
                     )}
                   </ListEditor>
-                </>
-              ),
-            },
-            {
-              key: "elevation",
-              label: "Elevation",
-              children: (
-                <>
+          </Block>
+
+          <Block
+            sectionKey="elevation"
+            title="Elevation (এলিভেশন)"
+            hint="Building views visitors can open full screen."
+          >
                   <Pair en={["elevation", "eyebrow"]} bn={["elevation", "eyebrowBn"]} label="Eyebrow" />
                   <Pair en={["elevation", "title"]} bn={["elevation", "titleBn"]} label="Title" />
                   <Pair en={["elevation", "description"]} bn={["elevation", "descriptionBn"]} label="Description" rows={3} />
@@ -440,14 +466,13 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                       </>
                     )}
                   </ListEditor>
-                </>
-              ),
-            },
-            {
-              key: "films",
-              label: "Films",
-              children: (
-                <>
+          </Block>
+
+          <Block
+            sectionKey="films"
+            title="Films (ফিল্ম)"
+            hint="Project films from Facebook or YouTube."
+          >
                   <Pair en={["films", "eyebrow"]} bn={["films", "eyebrowBn"]} label="Eyebrow" />
                   <Pair en={["films", "title"]} bn={["films", "titleBn"]} label="Title" />
                   <Pair en={["films", "description"]} bn={["films", "descriptionBn"]} label="Description" rows={3} />
@@ -480,14 +505,13 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                       </>
                     )}
                   </ListEditor>
-                </>
-              ),
-            },
-            {
-              key: "amenities",
-              label: "Amenities",
-              children: (
-                <>
+          </Block>
+
+          <Block
+            sectionKey="amenities"
+            title="Amenities (সুবিধা)"
+            hint="The amenity cards under the films."
+          >
                   <Pair en={["amenities", "eyebrow"]} bn={["amenities", "eyebrowBn"]} label="Eyebrow" />
                   <Pair en={["amenities", "title"]} bn={["amenities", "titleBn"]} label="Title" />
                   <Pair en={["amenities", "description"]} bn={["amenities", "descriptionBn"]} label="Description" rows={3} />
@@ -502,14 +526,13 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                       </>
                     )}
                   </ListEditor>
-                </>
-              ),
-            },
-            {
-              key: "gallery",
-              label: "Gallery",
-              children: (
-                <>
+          </Block>
+
+          <Block
+            sectionKey="gallery"
+            title="Gallery (গ্যালারি)"
+            hint="Photos visitors can open larger."
+          >
                   <Pair en={["gallery", "eyebrow"]} bn={["gallery", "eyebrowBn"]} label="Eyebrow" />
                   <Pair en={["gallery", "title"]} bn={["gallery", "titleBn"]} label="Title" />
                   <Pair en={["gallery", "open"]} bn={["gallery", "openBn"]} label="Open label" />
@@ -529,14 +552,13 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                       </>
                     )}
                   </ListEditor>
-                </>
-              ),
-            },
-            {
-              key: "location",
-              label: "Location",
-              children: (
-                <>
+          </Block>
+
+          <Block
+            sectionKey="location"
+            title="Location (লোকেশন)"
+            hint="The map and the facts beside it."
+          >
                   <Pair en={["location", "eyebrow"]} bn={["location", "eyebrowBn"]} label="Eyebrow" />
                   <Pair en={["location", "title"]} bn={["location", "titleBn"]} label="Title" />
                   <Pair en={["location", "description"]} bn={["location", "descriptionBn"]} label="Description" rows={3} />
@@ -556,14 +578,13 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                       </>
                     )}
                   </ListEditor>
-                </>
-              ),
-            },
-            {
-              key: "process",
-              label: "Process",
-              children: (
-                <>
+          </Block>
+
+          <Block
+            sectionKey="process"
+            title="Process (প্রক্রিয়া)"
+            hint="The booking steps."
+          >
                   <Pair en={["process", "eyebrow"]} bn={["process", "eyebrowBn"]} label="Eyebrow" />
                   <Pair en={["process", "title"]} bn={["process", "titleBn"]} label="Title" />
                   <ListEditor name={["process", "steps"]} addLabel="Add step">
@@ -574,28 +595,26 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                       </>
                     )}
                   </ListEditor>
-                </>
-              ),
-            },
-            {
-              key: "cta",
-              label: "CTA band",
-              children: (
-                <>
+          </Block>
+
+          <Block
+            sectionKey="cta"
+            title="CTA band (কল ব্যান্ড)"
+            hint="The band that asks the visitor to call or book."
+          >
                   <Pair en={["cta", "eyebrow"]} bn={["cta", "eyebrowBn"]} label="Eyebrow" />
                   <Pair en={["cta", "title"]} bn={["cta", "titleBn"]} label="Title" />
                   <Pair en={["cta", "description"]} bn={["cta", "descriptionBn"]} label="Description" rows={3} />
                   <Pair en={["cta", "primary"]} bn={["cta", "primaryBn"]} label="Primary button" />
                   <Pair en={["cta", "call"]} bn={["cta", "callBn"]} label="Call button" />
                   <Pair en={["cta", "whatsapp"]} bn={["cta", "whatsappBn"]} label="WhatsApp button" />
-                </>
-              ),
-            },
-            {
-              key: "reviews",
-              label: "Reviews",
-              children: (
-                <>
+          </Block>
+
+          <Block
+            sectionKey="reviews"
+            title="Reviews (রিভিউ)"
+            hint="Client quotes and review videos."
+          >
                   <Pair en={["reviews", "eyebrow"]} bn={["reviews", "eyebrowBn"]} label="Eyebrow" />
                   <Pair en={["reviews", "title"]} bn={["reviews", "titleBn"]} label="Title" />
                   <Pair en={["reviews", "description"]} bn={["reviews", "descriptionBn"]} label="Description" rows={3} />
@@ -629,14 +648,13 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                       </>
                     )}
                   </ListEditor>
-                </>
-              ),
-            },
-            {
-              key: "faq",
-              label: "FAQ",
-              children: (
-                <>
+          </Block>
+
+          <Block
+            sectionKey="faq"
+            title="FAQ"
+            hint="The questions under the reviews."
+          >
                   <Pair en={["faq", "eyebrow"]} bn={["faq", "eyebrowBn"]} label="Eyebrow" />
                   <Pair en={["faq", "title"]} bn={["faq", "titleBn"]} label="Title" />
                   <Pair en={["faq", "description"]} bn={["faq", "descriptionBn"]} label="Description" rows={3} />
@@ -648,14 +666,13 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                       </>
                     )}
                   </ListEditor>
-                </>
-              ),
-            },
-            {
-              key: "enquire",
-              label: "Enquire form",
-              children: (
-                <>
+          </Block>
+
+          <Block
+            sectionKey="enquire"
+            title="Enquire (বুকিং ফর্ম)"
+            hint="The booking form and its field labels."
+          >
                   <Pair en={["enquire", "eyebrow"]} bn={["enquire", "eyebrowBn"]} label="Eyebrow" />
                   <Pair en={["enquire", "title"]} bn={["enquire", "titleBn"]} label="Title" />
                   <Pair en={["enquire", "description"]} bn={["enquire", "descriptionBn"]} label="Description" rows={3} />
@@ -676,11 +693,8 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                   <Pair en={["enquire", "form", "privacy"]} bn={["enquire", "form", "privacyBn"]} label="Privacy note" rows={2} />
                   <Pair en={["enquire", "form", "successTitle"]} bn={["enquire", "form", "successTitleBn"]} label="Success title" />
                   <Pair en={["enquire", "form", "successBody"]} bn={["enquire", "form", "successBodyBn"]} label="Success body" rows={2} />
-                </>
-              ),
-            },
-          ]}
-        />
+          </Block>
+        </Card>
 
         <div className="sticky bottom-4 z-10 flex items-center justify-end gap-3 rounded-lg border border-gray-300 bg-white/95 p-4 shadow-md backdrop-blur-md">
           <Button onClick={() => navigate("/projects")}>Cancel</Button>

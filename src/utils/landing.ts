@@ -20,3 +20,16 @@ export function publicLandingUrl(path?: string | null, locale = "bn") {
   );
   return `${base}/${locale}${href}`;
 }
+
+/** Public project details page, `/bn/projects/:slug`. */
+export function publicProjectUrl(slug?: string | null, locale = "bn") {
+  const clean = String(slug || "")
+    .replace(/^\/+|\/+$/g, "")
+    .toLowerCase();
+  if (!clean) return "";
+  const base = String(config.site_url || "https://zoompropertyltd.com").replace(
+    /\/+$/,
+    "",
+  );
+  return `${base}/${locale}/projects/${clean}`;
+}

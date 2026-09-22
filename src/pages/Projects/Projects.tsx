@@ -1,7 +1,7 @@
 import { Button, Input, Modal, Progress, Select, Space, Switch, Tag, Tooltip } from "antd";
 import { Edit, ExternalLink, LayoutTemplate, Plus, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import PageHeader from "../../components/Common/PageHeader";
@@ -121,6 +121,10 @@ const Projects = () => {
       key: "name",
       render: (name: string, r: any) => {
         const imgUrl = mediaSrc(r.coverImage);
+        const liveUrl =
+          r.landing?.path && r.landing.isActive
+            ? publicLandingUrl(r.landing.path)
+            : "";
         return (
           <div className="flex items-center gap-3">
             {imgUrl ? (
@@ -136,26 +140,25 @@ const Projects = () => {
               </div>
             ) : null}
             <div className="min-w-0">
-              <Link
-                to={`/projects/${r._id}/landing`}
-                className="font-medium text-secondary-800 hover:text-primary-800 hover:underline"
-              >
-                {name}
-              </Link>
+              {liveUrl ? (
+                <Tooltip title="View live page">
+                  <a
+                    href={liveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 font-medium text-secondary-800 hover:text-primary hover:underline"
+                  >
+                    {name}
+                    <ExternalLink className="h-3 w-3 shrink-0" />
+                  </a>
+                </Tooltip>
+              ) : (
+                <p className="font-medium text-secondary-800">{name}</p>
+              )}
               <p className="text-xs text-secondary-500">
                 {r.area?.name ? `${r.area.name} · ` : ""}
                 {r.developer}
               </p>
-              {r.landing?.path ? (
-                <Tag
-                  color={r.landing.isActive ? "green" : "default"}
-                  className="mt-1"
-                >
-                  {r.landing.isActive ? "Live" : "Draft"} · /{r.landing.path}
-                </Tag>
-              ) : (
-                <p className="mt-0.5 text-xs text-secondary-400">No landing yet</p>
-              )}
             </div>
           </div>
         );
@@ -292,34 +295,19 @@ const Projects = () => {
       title: "Actions",
       key: "actions",
       fixed: "right" as const,
-      width: 228,
+      width: 140,
       render: (_: unknown, r: any) => {
-        const liveUrl =
-          r.landing?.path && r.landing.isActive
-            ? publicLandingUrl(r.landing.path)
-            : "";
         return (
           <Space>
             <PermissionGate module="Projects" action="Update">
-              <Tooltip title="Open landing page">
+              <Tooltip title="Edit this project's landing sections">
                 <Button
+                  type="primary"
                   icon={<LayoutTemplate className="h-4 w-4" />}
                   onClick={() => navigate(`/projects/${r._id}/landing`)}
-                >
-                  Landing
-                </Button>
-              </Tooltip>
-            </PermissionGate>
-            {liveUrl ? (
-              <Tooltip title="View live page">
-                <Button
-                  icon={<ExternalLink className="h-4 w-4" />}
-                  href={liveUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
                 />
               </Tooltip>
-            ) : null}
+            </PermissionGate>
             <PermissionGate module="Projects" action="Update">
               <Tooltip title="Edit project">
                 <Button
