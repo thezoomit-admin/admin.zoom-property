@@ -424,7 +424,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
 
     const residencePairs = (landing.residences?.images || [])
       .map((img: any) => ({ id: mediaId(img), url: mediaPreview(img) }))
-      .filter((p: { id: any; url: string | undefined }) => p.id && p.url);
+      .filter((p: { id: any; url: string | undefined }) => Boolean(p.id));
 
     form.setFieldsValue({
       path: landing.path || project?.slug || "",
@@ -458,7 +458,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
       residences: {
         ...landing.residences,
         images: residencePairs.map((p: { id: any }) => p.id),
-        imageUrls: residencePairs.map((p: { url: string }) => p.url),
+        imageUrls: residencePairs.map((p: { url?: string }) => p.url || ""),
         highlights: landing.residences?.highlights || [],
         unit: landing.residences?.unit || {},
       },
