@@ -14,12 +14,18 @@ export const OrderInputCell = ({
   index,
   onUpdateOrder,
 }: OrderInputCellProps) => {
-  const currentOrder = typeof record.order === "number" ? record.order : index + 1;
+  const currentOrder = typeof record.order === "number" && record.order >= 1
+    ? record.order
+    : index + 1;
   const [val, setVal] = useState<number | null>(currentOrder);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setVal(typeof record.order === "number" ? record.order : index + 1);
+    setVal(
+      typeof record.order === "number" && record.order >= 1
+        ? record.order
+        : index + 1
+    );
   }, [record.order, index]);
 
   const isChanged = val !== null && val !== undefined && val !== record.order;

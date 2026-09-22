@@ -12,6 +12,7 @@ const projectApi = baseApi.injectEndpoints({
           if (params.stage) q.append("stage", params.stage);
           if (params.area) q.append("area", params.area);
           if (params.activeOnly) q.append("activeOnly", "true");
+          if (params.sort) q.append("sort", params.sort);
         }
         return { url: `projects?${q.toString()}`, method: "GET" };
       },
@@ -46,6 +47,21 @@ const projectApi = baseApi.injectEndpoints({
       query: (id: string) => ({ url: `projects/${id}`, method: "DELETE" }),
       invalidatesTags: ["projects"],
     }),
+
+    getProjectLanding: builder.query({
+      query: (id: string) => ({ url: `projects/${id}/landing`, method: "GET" }),
+      transformResponse: (r: { data: any }) => r.data,
+      providesTags: ["projects"],
+    }),
+
+    saveProjectLanding: builder.mutation({
+      query: ({ id, data }: { id: string; data: any }) => ({
+        url: `projects/${id}/landing`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["projects"],
+    }),
   }),
 });
 
@@ -55,4 +71,6 @@ export const {
   useCreateProjectMutation,
   useUpdateProjectMutation,
   useDeleteProjectMutation,
+  useGetProjectLandingQuery,
+  useSaveProjectLandingMutation,
 } = projectApi;

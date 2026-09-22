@@ -1,5 +1,5 @@
 import { Button, Input, Modal, Progress, Select, Space, Switch, Tag, Tooltip } from "antd";
-import { Edit, Plus, Search, Trash2 } from "lucide-react";
+import { Edit, ExternalLink, LayoutTemplate, Plus, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -17,6 +17,7 @@ import {
   useGetProjectsQuery,
   useUpdateProjectMutation,
 } from "../../redux/features/project/projectApi";
+import { publicLandingUrl } from "../../utils/landing";
 import { STAGE_COLOUR, STAGES } from "./projectMeta";
 import brand from "../../theme/brand";
 
@@ -120,6 +121,10 @@ const Projects = () => {
       key: "name",
       render: (name: string, r: any) => {
         const imgUrl = mediaSrc(r.coverImage);
+        const liveUrl =
+          r.landing?.path && r.landing.isActive
+            ? publicLandingUrl(r.landing.path)
+            : "";
         return (
           <div className="flex items-center gap-3">
             {imgUrl ? (
@@ -134,8 +139,22 @@ const Projects = () => {
                 />
               </div>
             ) : null}
-            <div>
-              <p className="font-medium text-secondary-800">{name}</p>
+            <div className="min-w-0">
+              {liveUrl ? (
+                <Tooltip title="View live page">
+                  <a
+                    href={liveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 font-medium text-secondary-800 hover:text-primary hover:underline"
+                  >
+                    {name}
+                    <ExternalLink className="h-3 w-3 shrink-0" />
+                  </a>
+                </Tooltip>
+              ) : (
+                <p className="font-medium text-secondary-800">{name}</p>
+              )}
               <p className="text-xs text-secondary-500">
                 {r.area?.name ? `${r.area.name} · ` : ""}
                 {r.developer}
@@ -276,28 +295,39 @@ const Projects = () => {
       title: "Actions",
       key: "actions",
       fixed: "right" as const,
-      width: 120,
-      render: (_: unknown, r: any) => (
-        <Space>
-          <PermissionGate module="Projects" action="Update">
-            <Tooltip title="Edit">
-              <Button
-                icon={<Edit className="h-4 w-4" />}
-                onClick={() => navigate(`/projects/edit/${r._id}`)}
-              />
-            </Tooltip>
-          </PermissionGate>
-          <PermissionGate module="Projects" action="Delete">
-            <Tooltip title="Delete">
-              <Button
-                danger
-                icon={<Trash2 className="h-4 w-4" />}
-                onClick={() => onDelete(r._id, r.name)}
-              />
-            </Tooltip>
-          </PermissionGate>
-        </Space>
-      ),
+      width: 140,
+      render: (_: unknown, r: any) => {
+        return (
+          <Space>
+            <PermissionGate module="Projects" action="Update">
+              <Tooltip title="Edit this project's landing sections">
+                <Button
+                  type="primary"
+                  icon={<LayoutTemplate className="h-4 w-4" />}
+                  onClick={() => navigate(`/projects/${r._id}/landing`)}
+                />
+              </Tooltip>
+            </PermissionGate>
+            <PermissionGate module="Projects" action="Update">
+              <Tooltip title="Edit project">
+                <Button
+                  icon={<Edit className="h-4 w-4" />}
+                  onClick={() => navigate(`/projects/edit/${r._id}`)}
+                />
+              </Tooltip>
+            </PermissionGate>
+            <PermissionGate module="Projects" action="Delete">
+              <Tooltip title="Delete">
+                <Button
+                  danger
+                  icon={<Trash2 className="h-4 w-4" />}
+                  onClick={() => onDelete(r._id, r.name)}
+                />
+              </Tooltip>
+            </PermissionGate>
+          </Space>
+        );
+      },
     },
   ];
 
