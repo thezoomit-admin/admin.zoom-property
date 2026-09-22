@@ -27,6 +27,7 @@ import UpdatePost from "../pages/Blog/UpdatePost";
 import Landowners from "../pages/Landowners/Landowners";
 import ShowcaseVideos from "../pages/ShowcaseVideos/ShowcaseVideos";
 import CreateProject from "../pages/Projects/CreateProject";
+import ProjectLandingPage from "../pages/Projects/ProjectLandingPage";
 import Projects from "../pages/Projects/Projects";
 import UpdateProject from "../pages/Projects/UpdateProject";
 import CreateProperty from "../pages/Properties/CreateProperty";
@@ -76,6 +77,7 @@ const routes = [
           { path: "", element: <Projects /> },
           { path: "create", element: <CreateProject /> },
           { path: "edit/:id", element: <UpdateProject /> },
+          { path: ":id/landing", element: <ProjectLandingPage /> },
         ],
       },
       {

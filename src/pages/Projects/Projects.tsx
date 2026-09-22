@@ -1,5 +1,5 @@
 import { Button, Input, Modal, Progress, Select, Space, Switch, Tag, Tooltip } from "antd";
-import { Edit, Plus, Search, Trash2 } from "lucide-react";
+import { Edit, LayoutTemplate, Plus, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -276,10 +276,16 @@ const Projects = () => {
       title: "Actions",
       key: "actions",
       fixed: "right" as const,
-      width: 120,
+      width: 168,
       render: (_: unknown, r: any) => (
         <Space>
           <PermissionGate module="Projects" action="Update">
+            <Tooltip title="Landing page">
+              <Button
+                icon={<LayoutTemplate className="h-4 w-4" />}
+                onClick={() => navigate(`/projects/${r._id}/landing`)}
+              />
+            </Tooltip>
             <Tooltip title="Edit">
               <Button
                 icon={<Edit className="h-4 w-4" />}

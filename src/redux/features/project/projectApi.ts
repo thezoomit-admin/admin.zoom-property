@@ -46,6 +46,21 @@ const projectApi = baseApi.injectEndpoints({
       query: (id: string) => ({ url: `projects/${id}`, method: "DELETE" }),
       invalidatesTags: ["projects"],
     }),
+
+    getProjectLanding: builder.query({
+      query: (id: string) => ({ url: `projects/${id}/landing`, method: "GET" }),
+      transformResponse: (r: { data: any }) => r.data,
+      providesTags: ["projects"],
+    }),
+
+    saveProjectLanding: builder.mutation({
+      query: ({ id, data }: { id: string; data: any }) => ({
+        url: `projects/${id}/landing`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["projects"],
+    }),
   }),
 });
 
@@ -55,4 +70,6 @@ export const {
   useCreateProjectMutation,
   useUpdateProjectMutation,
   useDeleteProjectMutation,
+  useGetProjectLandingQuery,
+  useSaveProjectLandingMutation,
 } = projectApi;
