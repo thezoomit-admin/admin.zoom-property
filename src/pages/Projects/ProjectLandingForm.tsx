@@ -229,6 +229,51 @@ const stripPreview = (value: unknown): unknown => {
   return out;
 };
 
+const PUBLISHING_FIELDS = [
+  "path",
+  "isActive",
+  "facebookUrl",
+  "phonePrimary",
+  "phoneSecondary",
+  "whatsapp",
+  "metaTitle",
+  "metaTitleBn",
+  "metaDescription",
+  "metaDescriptionBn",
+  "navEnquire",
+  "navEnquireBn",
+] as const;
+
+/** Slice form values down to the active tab payload for PATCH. */
+const buildSectionPayload = (
+  tab: TabKey,
+  all: Record<string, unknown>,
+): Record<string, unknown> => {
+  if (tab === "publishing") {
+    const out: Record<string, unknown> = {};
+    for (const key of PUBLISHING_FIELDS) {
+      if (key in all) out[key] = all[key];
+    }
+    return stripPreview(out) as Record<string, unknown>;
+  }
+
+  const section = all[tab];
+  const sections = all.sections as Record<string, { visible?: boolean }> | undefined;
+  const visible = sections?.[tab]?.visible;
+  const body =
+    section && typeof section === "object"
+      ? { ...(section as Record<string, unknown>) }
+      : {};
+  if (typeof visible === "boolean") body.visible = visible;
+  return stripPreview(body) as Record<string, unknown>;
+};
+
+const tabSaveLabel = (tab: TabKey) => {
+  const row = TABS.find((t) => t.key === tab);
+  const short = (row?.title || tab).split(" (")[0];
+  return `Save ${short}`;
+};
+
 /** Collect every `…Bn` field and its English sibling under a form value tree. */
 function collectBnPairs(
   value: unknown,
@@ -528,10 +573,10 @@ interface Props {
   project?: { _id: string; name?: string; nameBn?: string; slug?: string };
   initial?: any;
   saving: boolean;
-  onSubmit: (values: any) => Promise<void>;
+  onSubmitSection: (section: string, values: Record<string, unknown>) => Promise<void>;
 }
 
-const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
+const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props) => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabKey>("publishing");
@@ -669,8 +714,11 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
           await form.validateFields(toValidate);
         }
 
-        const values = form.getFieldsValue(true);
-        await onSubmit(stripPreview(values));
+        const values = form.getFieldsValue(true) as Record<string, unknown>;
+        const payload = buildSectionPayload(activeTab, values);
+        await onSubmitSection(activeTab, payload);
+        const short = tabSaveLabel(activeTab).replace(/^Save\s+/, "");
+        toast.success(`${short} saved`, { position: "top-center" });
       } catch (err: any) {
         const errorFields = err?.errorFields as
           | { name: (string | number)[]; errors: string[] }[]
@@ -680,7 +728,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
           errorFields?.[0]?.errors?.[0] ||
           err?.data?.message ||
           err?.message ||
-          "Could not save the landing page";
+          "Could not save this section";
         toast.error(msg, { position: "top-center" });
       } finally {
         await finish();
@@ -1230,7 +1278,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
             onClick={handleSave}
             className="min-w-[12rem] !flex items-center justify-center"
           >
-            {busy ? "সেভ হচ্ছে..." : "Save landing page"}
+            {busy ? "সেকশন সেভ হচ্ছে..." : tabSaveLabel(activeTab)}
           </Button>
         </div>
       </Form>

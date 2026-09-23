@@ -62,6 +62,23 @@ const projectApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["projects"],
     }),
+
+    saveProjectLandingSection: builder.mutation({
+      query: ({
+        id,
+        section,
+        data,
+      }: {
+        id: string;
+        section: string;
+        data: any;
+      }) => ({
+        url: `projects/${id}/landing/${section}`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: ["projects"],
+    }),
   }),
 });
 
@@ -73,4 +90,5 @@ export const {
   useDeleteProjectMutation,
   useGetProjectLandingQuery,
   useSaveProjectLandingMutation,
+  useSaveProjectLandingSectionMutation,
 } = projectApi;

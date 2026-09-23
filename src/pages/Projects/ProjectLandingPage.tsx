@@ -4,18 +4,21 @@ import { toast } from "react-toastify";
 
 import {
   useGetProjectLandingQuery,
-  useSaveProjectLandingMutation,
+  useSaveProjectLandingSectionMutation,
 } from "../../redux/features/project/projectApi";
 import ProjectLandingForm from "./ProjectLandingForm";
 
 const ProjectLandingPage = () => {
   const { id = "" } = useParams();
   const { data, isLoading } = useGetProjectLandingQuery(id, { skip: !id });
-  const [saveLanding, { isLoading: saving }] = useSaveProjectLandingMutation();
+  const [saveSection, { isLoading: saving }] =
+    useSaveProjectLandingSectionMutation();
 
-  const onSubmit = async (values: Record<string, unknown>) => {
-    await saveLanding({ id, data: values }).unwrap();
-    toast.success("Landing page saved", { position: "top-center" });
+  const onSubmitSection = async (
+    section: string,
+    values: Record<string, unknown>,
+  ) => {
+    await saveSection({ id, section, data: values }).unwrap();
   };
 
   if (isLoading) {
@@ -31,7 +34,7 @@ const ProjectLandingPage = () => {
       project={data?.project}
       initial={data?.landing}
       saving={saving}
-      onSubmit={onSubmit}
+      onSubmitSection={onSubmitSection}
     />
   );
 };
