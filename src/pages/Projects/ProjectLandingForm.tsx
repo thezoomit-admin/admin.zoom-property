@@ -677,20 +677,10 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
       setSubmitting(true);
     });
 
-    const startedAt = Date.now();
-
     void (async () => {
-      const finish = async () => {
-        const wait = Math.max(0, 450 - (Date.now() - startedAt));
-        if (wait) await new Promise((r) => setTimeout(r, wait));
-        setSubmitting(false);
-      };
-
       try {
-        // Yield so the browser can actually paint the loading button.
-        await new Promise<void>((r) =>
-          requestAnimationFrame(() => requestAnimationFrame(() => r())),
-        );
+        // Yield one frame so the loading spinner can paint.
+        await new Promise<void>((r) => requestAnimationFrame(() => r()));
 
         const allFields = form.getFieldsError();
 
@@ -731,7 +721,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
           "Could not save this section";
         toast.error(msg, { position: "top-center" });
       } finally {
-        await finish();
+        setSubmitting(false);
       }
     })();
   };

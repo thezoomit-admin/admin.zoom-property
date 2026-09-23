@@ -77,7 +77,9 @@ const projectApi = baseApi.injectEndpoints({
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["projects"],
+      // Form already holds the saved values — skip refetching every project /
+      // full landing (that was making section save feel as slow as full save).
+      invalidatesTags: [],
     }),
   }),
 });
