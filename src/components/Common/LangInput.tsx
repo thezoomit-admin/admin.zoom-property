@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { Button, Form, Input, Tooltip } from "antd";
-import { Languages, Loader2 } from "lucide-react";
+import { Info, Languages, Loader2 } from "lucide-react";
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 
@@ -67,6 +67,15 @@ interface LangInputProps {
   name: string | number | (string | number)[];
   lang: "bn" | "en";
   required?: boolean;
+  /** Marks the field as optional in the label (no validation change). */
+  optional?: boolean;
+  /**
+   * Design guidance shown on an Info tooltip — ideal length so the live
+   * landing layout does not wrap or crowd.
+   */
+  hint?: string;
+  /** Soft character budget shown as a live counter (not a hard max). */
+  softMax?: number;
   placeholder?: string;
   isTextArea?: boolean;
   rows?: number;
@@ -93,6 +102,9 @@ export const LangInput: React.FC<LangInputProps> = ({
   name,
   lang,
   required = false,
+  optional = false,
+  hint,
+  softMax,
   placeholder,
   isTextArea = false,
   rows = 2,
@@ -143,9 +155,37 @@ export const LangInput: React.FC<LangInputProps> = ({
     }
   };
 
+  const labelCore = (
+    <span className="inline-flex items-center gap-1.5 min-w-0">
+      <span className="whitespace-nowrap">{label}</span>
+      {optional ? (
+        <span className="rounded-full bg-secondary-100 px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-secondary-500">
+          optional
+        </span>
+      ) : null}
+      {hint ? (
+        <Tooltip
+          title={
+            <div className="max-w-xs space-y-1 text-xs leading-relaxed">
+              <p>{hint}</p>
+              {softMax ? (
+                <p className="text-white/80">
+                  Ideal ≤ <strong>{softMax}</strong> characters — longer text
+                  wraps and can crowd the live layout.
+                </p>
+              ) : null}
+            </div>
+          }
+        >
+          <Info className="h-3.5 w-3.5 shrink-0 cursor-help text-primary-600 hover:text-primary-700" />
+        </Tooltip>
+      ) : null}
+    </span>
+  );
+
   const labelWithTranslateBtn = (
     <div className="flex items-center justify-between w-full gap-2">
-      <span className="whitespace-nowrap">{label}</span>
+      {labelCore}
       {lang === "bn" && form && (
         <Tooltip title="ইংরেজিতে লেখা থেকে বাংলায় রূপান্তর করুন">
           <Button
@@ -169,12 +209,29 @@ export const LangInput: React.FC<LangInputProps> = ({
     </div>
   );
 
+  const countProps = softMax
+    ? {
+        showCount: {
+          formatter: ({ count }: { count: number }) => (
+            <span className={count > softMax ? "text-amber-600" : "text-secondary-400"}>
+              {count}/{softMax}
+            </span>
+          ),
+        },
+      }
+    : {};
+
   return (
-    <Form.Item label={labelWithTranslateBtn} name={name} rules={rules} className={className}>
+    <Form.Item
+      label={labelWithTranslateBtn}
+      name={name}
+      rules={rules}
+      className={className}
+    >
       {isTextArea ? (
-        <Input.TextArea rows={rows} placeholder={placeholder} />
+        <Input.TextArea rows={rows} placeholder={placeholder} {...countProps} />
       ) : (
-        <Input placeholder={placeholder} />
+        <Input placeholder={placeholder} {...countProps} />
       )}
     </Form.Item>
   );

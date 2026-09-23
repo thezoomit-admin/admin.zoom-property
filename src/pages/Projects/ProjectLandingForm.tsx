@@ -1,5 +1,5 @@
 import { Button, Card, Col, Form, Input, Row, Select, Space, Switch, Tabs, Tooltip } from "antd";
-import { ArrowLeft, ExternalLink, Languages, Loader2, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, Info, Languages, Loader2, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -62,17 +62,141 @@ const mediaPreview = (m: any) => mediaSrc(m) || undefined;
 
 /** Recommended upload sizes so frontend crops look clean. */
 const IMG_SIZE = {
-  hero: "Recommended: 2400×1600 (3:2) or 2560×1440 (16:9). Full-bleed background — keep subject center-right.",
-  about: "Recommended: wide composite 1800×1200 (3:2) — facts + building side by side. Shown full with object-contain (no squash on mobile).",
-  residences: "Recommended: 1600×1200 (4:3) or wide banner 2000×1200. Shown full with object-contain (no crop).",
-  elevation: "Recommended: tall building 1200×1800 (2:3) or wide composite 2000×1400. Shown full with object-contain (no crop) — different from Gallery.",
-  gallery: "Recommended: 1920×1080 (16:9). Main viewer is 16:9 crop.",
-
-  avatar: "Recommended: 400×400 (1:1). Shown as a small circle — face centered.",
+  hero: "2400×1600 (3:2) or 2560×1440 (16:9). Full-bleed — keep subject center-right.",
+  about: "Wide composite 1800×1200 (3:2). Shown with object-contain (no squash on mobile).",
+  residences: "1600×1200 (4:3) or wide 2000×1200. Shown with object-contain (no crop).",
+  elevation: "Tall 1200×1800 (2:3) or wide 2000×1400. Object-contain — different from Gallery.",
+  gallery: "1920×1080 (16:9). Main viewer uses a 16:9 crop.",
+  avatar: "400×400 (1:1). Shown as a small circle — face centered.",
 } as const;
 
-const imgHint = (text: string) => (
-  <span className="text-xs text-secondary-500">{text}</span>
+/** Soft length guides so live landing typography stays tidy. */
+type FieldKind =
+  | "eyebrow"
+  | "title"
+  | "heroTitle"
+  | "lead"
+  | "body"
+  | "description"
+  | "badge"
+  | "cta"
+  | "uiLabel"
+  | "price"
+  | "metaTitle"
+  | "metaDesc"
+  | "short"
+  | "statValue"
+  | "statLabel"
+  | "caption"
+  | "note"
+  | "unitSpec"
+  | "nav";
+
+const FIELD_GUIDE: Record<
+  FieldKind,
+  { tip: string; softMax: number; optional?: boolean }
+> = {
+  eyebrow: {
+    tip: "Small uppercase label above the title.",
+    softMax: 22,
+  },
+  title: {
+    tip: "Section heading on the live page.",
+    softMax: 48,
+  },
+  heroTitle: {
+    tip: "Main hero headline — the biggest text on the first screen.",
+    softMax: 42,
+  },
+  lead: {
+    tip: "One short supporting sentence under the hero title.",
+    softMax: 140,
+  },
+  body: {
+    tip: "Paragraph body. Keep it scannable — long blocks feel heavy on mobile.",
+    softMax: 280,
+  },
+  description: {
+    tip: "Section intro under the title.",
+    softMax: 160,
+  },
+  badge: {
+    tip: "Tiny pill / badge. Very short so it stays on one line.",
+    softMax: 18,
+  },
+  cta: {
+    tip: "Button label. Short verbs work best (Book / Call / Enquire).",
+    softMax: 22,
+  },
+  uiLabel: {
+    tip: "UI chrome label (Preview / Close / Play). Keep compact.",
+    softMax: 16,
+  },
+  price: {
+    tip: "Optional. Short price note beside the unit name (e.g. “Land share from ৳…”). Leave empty to hide the price on the site.",
+    softMax: 36,
+    optional: true,
+  },
+  metaTitle: {
+    tip: "Browser / SEO title. Search results usually show about 50–60 characters.",
+    softMax: 60,
+  },
+  metaDesc: {
+    tip: "SEO description under the title in search results.",
+    softMax: 155,
+  },
+  short: {
+    tip: "Short single line of text.",
+    softMax: 40,
+  },
+  statValue: {
+    tip: "Big number or short value in a hero stat chip.",
+    softMax: 10,
+  },
+  statLabel: {
+    tip: "Label under a hero stat value.",
+    softMax: 16,
+  },
+  caption: {
+    tip: "Caption under a film or photo card.",
+    softMax: 48,
+  },
+  note: {
+    tip: "Supporting note under the unit name.",
+    softMax: 100,
+    optional: true,
+  },
+  unitSpec: {
+    tip: "Beds / baths / size chip — keep short (e.g. “4 Beds”, “1,544 sq ft”).",
+    softMax: 18,
+  },
+  nav: {
+    tip: "Header “Book” button label.",
+    softMax: 18,
+  },
+};
+
+const imageLabel = (label: string, hint: string) => (
+  <span className="inline-flex items-center gap-1.5">
+    {label}
+    <Tooltip
+      title={
+        <div className="max-w-xs text-xs leading-relaxed">
+          <p className="font-medium">Recommended size</p>
+          <p className="mt-1 text-white/90">{hint}</p>
+        </div>
+      }
+    >
+      <Info className="h-3.5 w-3.5 cursor-help text-primary-600 hover:text-primary-700" />
+    </Tooltip>
+  </span>
+);
+
+const imageExtra = (hint: string) => (
+  <span className="mt-1 inline-flex max-w-full items-start gap-1 rounded-md border border-primary-200/60 bg-primary-50 px-2 py-1 text-[11px] font-medium leading-snug text-primary-800">
+    <span aria-hidden>📐</span>
+    <span>{hint}</span>
+  </span>
 );
 
 const stripPreview = (value: unknown): unknown => {
@@ -121,14 +245,17 @@ function Pair({
   label,
   rows,
   pathPrefix,
+  kind,
 }: {
   en: (string | number)[];
   bn: (string | number)[];
   label: string;
   rows?: number;
   pathPrefix?: (string | number)[];
+  kind?: FieldKind;
 }) {
   const form = Form.useFormInstance();
+  const guide = kind ? FIELD_GUIDE[kind] : undefined;
   return (
     <Row gutter={16}>
       <Col xs={24} md={12}>
@@ -141,6 +268,9 @@ function Pair({
           placeholder={`${label} in English`}
           isTextArea={!!rows}
           rows={rows}
+          hint={guide?.tip}
+          softMax={guide?.softMax}
+          optional={guide?.optional}
         />
       </Col>
       <Col xs={24} md={12}>
@@ -154,6 +284,9 @@ function Pair({
           placeholder={`${label} বাংলায়`}
           isTextArea={!!rows}
           rows={rows}
+          hint={guide?.tip}
+          softMax={guide?.softMax}
+          optional={guide?.optional}
         />
       </Col>
     </Row>
@@ -643,9 +776,9 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                 </Form.Item>
               </Col>
             </Row>
-            <Pair en={["metaTitle"]} bn={["metaTitleBn"]} label="Meta title" />
-            <Pair en={["metaDescription"]} bn={["metaDescriptionBn"]} label="Meta description" rows={2} />
-            <Pair en={["navEnquire"]} bn={["navEnquireBn"]} label="Header Book label" />
+            <Pair en={["metaTitle"]} bn={["metaTitleBn"]} label="Meta title" kind="metaTitle" />
+            <Pair en={["metaDescription"]} bn={["metaDescriptionBn"]} label="Meta description" rows={2} kind="metaDesc" />
+            <Pair en={["navEnquire"]} bn={["navEnquireBn"]} label="Header Book label" kind="nav" />
           </div>
 
           <div className={panelClass("hero")}>
@@ -654,23 +787,23 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
             title="Hero (হিরো)"
             hint="The first screen: photo, title, location and the two buttons."
           >
-                  <Form.Item label="Hero image" extra={imgHint(IMG_SIZE.hero)}>
+                  <Form.Item label={imageLabel("Hero image", IMG_SIZE.hero)} extra={imageExtra(IMG_SIZE.hero)}>
                     <UploadMedia form={form} fieldPath={["hero", "imageUrl"] as any} idFieldPath={["hero", "image"]} type="image" />
                   </Form.Item>
-                  <Pair en={["hero", "badge"]} bn={["hero", "badgeBn"]} label="Badge" />
-                  <Pair en={["hero", "handover"]} bn={["hero", "handoverBn"]} label="Handover badge" />
-                  <Pair en={["hero", "eyebrow"]} bn={["hero", "eyebrowBn"]} label="Eyebrow" />
-                  <Pair en={["hero", "title"]} bn={["hero", "titleBn"]} label="Title" />
-                  <Pair en={["hero", "lead"]} bn={["hero", "leadBn"]} label="Lead" rows={3} />
-                  <Pair en={["hero", "location"]} bn={["hero", "locationBn"]} label="Location" />
-                  <Pair en={["hero", "ctaPrimary"]} bn={["hero", "ctaPrimaryBn"]} label="Primary CTA" />
-                  <Pair en={["hero", "ctaSecondary"]} bn={["hero", "ctaSecondaryBn"]} label="Secondary CTA" />
+                  <Pair en={["hero", "badge"]} bn={["hero", "badgeBn"]} label="Badge" kind="badge" />
+                  <Pair en={["hero", "handover"]} bn={["hero", "handoverBn"]} label="Handover badge" kind="badge" />
+                  <Pair en={["hero", "eyebrow"]} bn={["hero", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
+                  <Pair en={["hero", "title"]} bn={["hero", "titleBn"]} label="Title" kind="heroTitle" />
+                  <Pair en={["hero", "lead"]} bn={["hero", "leadBn"]} label="Lead" rows={3} kind="lead" />
+                  <Pair en={["hero", "location"]} bn={["hero", "locationBn"]} label="Location" kind="short" />
+                  <Pair en={["hero", "ctaPrimary"]} bn={["hero", "ctaPrimaryBn"]} label="Primary CTA" kind="cta" />
+                  <Pair en={["hero", "ctaSecondary"]} bn={["hero", "ctaSecondaryBn"]} label="Secondary CTA" kind="cta" />
                   <p className="mb-2 text-sm font-medium">Stats</p>
                   <ListEditor name={["hero", "stats"]} addLabel="Add stat">
                     {(n, listPath) => (
                       <>
-                        <Pair pathPrefix={listPath} en={[n, "value"]} bn={[n, "valueBn"]} label="Value" />
-                        <Pair pathPrefix={listPath} en={[n, "label"]} bn={[n, "labelBn"]} label="Label" />
+                        <Pair pathPrefix={listPath} en={[n, "value"]} bn={[n, "valueBn"]} label="Value" kind="statValue" />
+                        <Pair pathPrefix={listPath} en={[n, "label"]} bn={[n, "labelBn"]} label="Label" kind="statLabel" />
                         <Form.Item name={[n, "icon"]} label="Icon">
                           <Input placeholder='fa-solid fa-building' />
                         </Form.Item>
@@ -686,17 +819,17 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
             title="About (প্রকল্প)"
             hint="The project story, the side photo and the points beside it."
           >
-                  <Form.Item label="Side image" extra={imgHint(IMG_SIZE.about)}>
+                  <Form.Item label={imageLabel("Side image", IMG_SIZE.about)} extra={imageExtra(IMG_SIZE.about)}>
                     <UploadMedia form={form} fieldPath={["about", "imageUrl"] as any} idFieldPath={["about", "image"]} type="image" />
                   </Form.Item>
-                  <Pair en={["about", "eyebrow"]} bn={["about", "eyebrowBn"]} label="Eyebrow" />
-                  <Pair en={["about", "title"]} bn={["about", "titleBn"]} label="Title" />
-                  <Pair en={["about", "body"]} bn={["about", "bodyBn"]} label="Body" rows={4} />
+                  <Pair en={["about", "eyebrow"]} bn={["about", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
+                  <Pair en={["about", "title"]} bn={["about", "titleBn"]} label="Title" kind="title" />
+                  <Pair en={["about", "body"]} bn={["about", "bodyBn"]} label="Body" rows={4} kind="body" />
                   <ListEditor name={["about", "points"]} addLabel="Add point">
                     {(n, listPath) => (
                       <>
-                        <Pair pathPrefix={listPath} en={[n, "title"]} bn={[n, "titleBn"]} label="Title" />
-                        <Pair pathPrefix={listPath} en={[n, "body"]} bn={[n, "bodyBn"]} label="Body" rows={2} />
+                        <Pair pathPrefix={listPath} en={[n, "title"]} bn={[n, "titleBn"]} label="Title" kind="title" />
+                        <Pair pathPrefix={listPath} en={[n, "body"]} bn={[n, "bodyBn"]} label="Body" rows={2} kind="body" />
                         <Form.Item name={[n, "icon"]} label="Icon">
                           <Input placeholder="fa-solid fa-handshake" />
                         </Form.Item>
@@ -712,27 +845,27 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
             title="Residences (ফ্ল্যাট)"
             hint="Flat photos, the featured unit and its highlights."
           >
-                  <Form.Item label="Residence images" extra={imgHint(IMG_SIZE.residences)}>
+                  <Form.Item label={imageLabel("Residence images", IMG_SIZE.residences)} extra={imageExtra(IMG_SIZE.residences)}>
                     <UploadMedia form={form} fieldPath={["residences", "imageUrls"] as any} idFieldPath={["residences", "images"]} mode="multiple" type="image" />
                   </Form.Item>
-                  <Pair en={["residences", "eyebrow"]} bn={["residences", "eyebrowBn"]} label="Eyebrow" />
-                  <Pair en={["residences", "title"]} bn={["residences", "titleBn"]} label="Title" />
-                  <Pair en={["residences", "description"]} bn={["residences", "descriptionBn"]} label="Description" rows={3} />
-                  <Pair en={["residences", "featured"]} bn={["residences", "featuredBn"]} label="Featured badge" />
-                  <Pair en={["residences", "cta"]} bn={["residences", "ctaBn"]} label="CTA" />
-                  <Pair en={["residences", "preview"]} bn={["residences", "previewBn"]} label="Preview label" />
-                  <Pair en={["residences", "close"]} bn={["residences", "closeBn"]} label="Close label" />
-                  <Pair en={["residences", "unit", "name"]} bn={["residences", "unit", "nameBn"]} label="Unit name" />
-                  <Pair en={["residences", "unit", "beds"]} bn={["residences", "unit", "bedsBn"]} label="Beds" />
-                  <Pair en={["residences", "unit", "baths"]} bn={["residences", "unit", "bathsBn"]} label="Baths" />
-                  <Pair en={["residences", "unit", "size"]} bn={["residences", "unit", "sizeBn"]} label="Size" />
-                  <Pair en={["residences", "unit", "price"]} bn={["residences", "unit", "priceBn"]} label="Price note" />
-                  <Pair en={["residences", "unit", "note"]} bn={["residences", "unit", "noteBn"]} label="Note" rows={2} />
+                  <Pair en={["residences", "eyebrow"]} bn={["residences", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
+                  <Pair en={["residences", "title"]} bn={["residences", "titleBn"]} label="Title" kind="title" />
+                  <Pair en={["residences", "description"]} bn={["residences", "descriptionBn"]} label="Description" rows={3} kind="description" />
+                  <Pair en={["residences", "featured"]} bn={["residences", "featuredBn"]} label="Featured badge" kind="badge" />
+                  <Pair en={["residences", "cta"]} bn={["residences", "ctaBn"]} label="CTA" kind="cta" />
+                  <Pair en={["residences", "preview"]} bn={["residences", "previewBn"]} label="Preview label" kind="uiLabel" />
+                  <Pair en={["residences", "close"]} bn={["residences", "closeBn"]} label="Close label" kind="uiLabel" />
+                  <Pair en={["residences", "unit", "name"]} bn={["residences", "unit", "nameBn"]} label="Unit name" kind="short" />
+                  <Pair en={["residences", "unit", "beds"]} bn={["residences", "unit", "bedsBn"]} label="Beds" kind="unitSpec" />
+                  <Pair en={["residences", "unit", "baths"]} bn={["residences", "unit", "bathsBn"]} label="Baths" kind="unitSpec" />
+                  <Pair en={["residences", "unit", "size"]} bn={["residences", "unit", "sizeBn"]} label="Size" kind="unitSpec" />
+                  <Pair en={["residences", "unit", "price"]} bn={["residences", "unit", "priceBn"]} label="Price note" kind="price" />
+                  <Pair en={["residences", "unit", "note"]} bn={["residences", "unit", "noteBn"]} label="Note" rows={2} kind="note" />
                   <ListEditor name={["residences", "highlights"]} addLabel="Add highlight">
                     {(n, listPath) => (
                       <>
-                        <Pair pathPrefix={listPath} en={[n, "label"]} bn={[n, "labelBn"]} label="Label" />
-                        <Pair pathPrefix={listPath} en={[n, "value"]} bn={[n, "valueBn"]} label="Value" />
+                        <Pair pathPrefix={listPath} en={[n, "label"]} bn={[n, "labelBn"]} label="Label" kind="short" />
+                        <Pair pathPrefix={listPath} en={[n, "value"]} bn={[n, "valueBn"]} label="Value" kind="short" />
                         <Form.Item name={[n, "icon"]} label="Icon">
                           <Input />
                         </Form.Item>
@@ -748,17 +881,17 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
             title="Elevation (এলিভেশন)"
             hint="Building views visitors can open full screen."
           >
-                  <Pair en={["elevation", "eyebrow"]} bn={["elevation", "eyebrowBn"]} label="Eyebrow" />
-                  <Pair en={["elevation", "title"]} bn={["elevation", "titleBn"]} label="Title" />
-                  <Pair en={["elevation", "description"]} bn={["elevation", "descriptionBn"]} label="Description" rows={3} />
-                  <Pair en={["elevation", "preview"]} bn={["elevation", "previewBn"]} label="Preview label" />
-                  <Pair en={["elevation", "close"]} bn={["elevation", "closeBn"]} label="Close label" />
+                  <Pair en={["elevation", "eyebrow"]} bn={["elevation", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
+                  <Pair en={["elevation", "title"]} bn={["elevation", "titleBn"]} label="Title" kind="title" />
+                  <Pair en={["elevation", "description"]} bn={["elevation", "descriptionBn"]} label="Description" rows={3} kind="description" />
+                  <Pair en={["elevation", "preview"]} bn={["elevation", "previewBn"]} label="Preview label" kind="uiLabel" />
+                  <Pair en={["elevation", "close"]} bn={["elevation", "closeBn"]} label="Close label" kind="uiLabel" />
                   <ListEditor name={["elevation", "views"]} addLabel="Add view">
                     {(n, listPath) => (
                       <>
-                        <Pair pathPrefix={listPath} en={[n, "label"]} bn={[n, "labelBn"]} label="Label" />
-                        <Pair pathPrefix={listPath} en={[n, "hint"]} bn={[n, "hintBn"]} label="Hint" />
-                        <Form.Item label="Image" extra={imgHint(IMG_SIZE.elevation)}>
+                        <Pair pathPrefix={listPath} en={[n, "label"]} bn={[n, "labelBn"]} label="Label" kind="caption" />
+                        <Pair pathPrefix={listPath} en={[n, "hint"]} bn={[n, "hintBn"]} label="Hint" kind="caption" />
+                        <Form.Item label={imageLabel("Image", IMG_SIZE.elevation)} extra={imageExtra(IMG_SIZE.elevation)}>
                           <UploadMedia
                             form={form}
                             fieldPath={["elevation", "views", n, "imageUrl"] as any}
@@ -778,15 +911,15 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
             title="Films (ফিল্ম)"
             hint="Project films from Facebook or YouTube."
           >
-                  <Pair en={["films", "eyebrow"]} bn={["films", "eyebrowBn"]} label="Eyebrow" />
-                  <Pair en={["films", "title"]} bn={["films", "titleBn"]} label="Title" />
-                  <Pair en={["films", "description"]} bn={["films", "descriptionBn"]} label="Description" rows={3} />
-                  <Pair en={["films", "play"]} bn={["films", "playBn"]} label="Play label" />
+                  <Pair en={["films", "eyebrow"]} bn={["films", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
+                  <Pair en={["films", "title"]} bn={["films", "titleBn"]} label="Title" kind="title" />
+                  <Pair en={["films", "description"]} bn={["films", "descriptionBn"]} label="Description" rows={3} kind="description" />
+                  <Pair en={["films", "play"]} bn={["films", "playBn"]} label="Play label" kind="uiLabel" />
                   <ListEditor name={["films", "items"]} addLabel="Add film">
                     {(n, listPath) => (
                       <>
-                        <Pair pathPrefix={listPath} en={[n, "title"]} bn={[n, "titleBn"]} label="Title" />
-                        <Pair pathPrefix={listPath} en={[n, "caption"]} bn={[n, "captionBn"]} label="Caption" />
+                        <Pair pathPrefix={listPath} en={[n, "title"]} bn={[n, "titleBn"]} label="Title" kind="title" />
+                        <Pair pathPrefix={listPath} en={[n, "caption"]} bn={[n, "captionBn"]} label="Caption" kind="caption" />
                         <Form.Item name={[n, "url"]} label="Video URL">
                           <Input placeholder="Facebook or YouTube URL" />
                         </Form.Item>
@@ -811,14 +944,14 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
             title="Amenities (সুবিধা)"
             hint="The amenity cards under the films."
           >
-                  <Pair en={["amenities", "eyebrow"]} bn={["amenities", "eyebrowBn"]} label="Eyebrow" />
-                  <Pair en={["amenities", "title"]} bn={["amenities", "titleBn"]} label="Title" />
-                  <Pair en={["amenities", "description"]} bn={["amenities", "descriptionBn"]} label="Description" rows={3} />
+                  <Pair en={["amenities", "eyebrow"]} bn={["amenities", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
+                  <Pair en={["amenities", "title"]} bn={["amenities", "titleBn"]} label="Title" kind="title" />
+                  <Pair en={["amenities", "description"]} bn={["amenities", "descriptionBn"]} label="Description" rows={3} kind="description" />
                   <ListEditor name={["amenities", "items"]} addLabel="Add amenity">
                     {(n, listPath) => (
                       <>
-                        <Pair pathPrefix={listPath} en={[n, "title"]} bn={[n, "titleBn"]} label="Title" />
-                        <Pair pathPrefix={listPath} en={[n, "body"]} bn={[n, "bodyBn"]} label="Body" rows={2} />
+                        <Pair pathPrefix={listPath} en={[n, "title"]} bn={[n, "titleBn"]} label="Title" kind="title" />
+                        <Pair pathPrefix={listPath} en={[n, "body"]} bn={[n, "bodyBn"]} label="Body" rows={2} kind="body" />
                         <Form.Item name={[n, "icon"]} label="Icon">
                           <Input />
                         </Form.Item>
@@ -834,15 +967,15 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
             title="Gallery (গ্যালারি)"
             hint="Photos visitors can open larger."
           >
-                  <Pair en={["gallery", "eyebrow"]} bn={["gallery", "eyebrowBn"]} label="Eyebrow" />
-                  <Pair en={["gallery", "title"]} bn={["gallery", "titleBn"]} label="Title" />
-                  <Pair en={["gallery", "open"]} bn={["gallery", "openBn"]} label="Open label" />
-                  <Pair en={["gallery", "close"]} bn={["gallery", "closeBn"]} label="Close label" />
+                  <Pair en={["gallery", "eyebrow"]} bn={["gallery", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
+                  <Pair en={["gallery", "title"]} bn={["gallery", "titleBn"]} label="Title" kind="title" />
+                  <Pair en={["gallery", "open"]} bn={["gallery", "openBn"]} label="Open label" kind="uiLabel" />
+                  <Pair en={["gallery", "close"]} bn={["gallery", "closeBn"]} label="Close label" kind="uiLabel" />
                   <ListEditor name={["gallery", "shots"]} addLabel="Add photo">
                     {(n, listPath) => (
                       <>
-                        <Pair pathPrefix={listPath} en={[n, "label"]} bn={[n, "labelBn"]} label="Label" />
-                        <Form.Item label="Image" extra={imgHint(IMG_SIZE.gallery)}>
+                        <Pair pathPrefix={listPath} en={[n, "label"]} bn={[n, "labelBn"]} label="Label" kind="caption" />
+                        <Form.Item label={imageLabel("Image", IMG_SIZE.gallery)} extra={imageExtra(IMG_SIZE.gallery)}>
                           <UploadMedia
                             form={form}
                             fieldPath={["gallery", "shots", n, "imageUrl"] as any}
@@ -862,22 +995,22 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
             title="Location (লোকেশন)"
             hint="The map and the facts beside it."
           >
-                  <Pair en={["location", "eyebrow"]} bn={["location", "eyebrowBn"]} label="Eyebrow" />
-                  <Pair en={["location", "title"]} bn={["location", "titleBn"]} label="Title" />
-                  <Pair en={["location", "description"]} bn={["location", "descriptionBn"]} label="Description" rows={3} />
+                  <Pair en={["location", "eyebrow"]} bn={["location", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
+                  <Pair en={["location", "title"]} bn={["location", "titleBn"]} label="Title" kind="title" />
+                  <Pair en={["location", "description"]} bn={["location", "descriptionBn"]} label="Description" rows={3} kind="description" />
                   <Form.Item name={["location", "mapEmbedUrl"]} label="Map embed URL">
                     <Input placeholder="https://maps.google.com/maps?q=...&output=embed" />
                   </Form.Item>
                   <Form.Item name={["location", "mapLinkUrl"]} label="Open in Maps URL">
                     <Input />
                   </Form.Item>
-                  <Pair en={["location", "mapOpen"]} bn={["location", "mapOpenBn"]} label="Open label" />
-                  <Pair en={["location", "mapHint"]} bn={["location", "mapHintBn"]} label="Map hint" />
+                  <Pair en={["location", "mapOpen"]} bn={["location", "mapOpenBn"]} label="Open label" kind="uiLabel" />
+                  <Pair en={["location", "mapHint"]} bn={["location", "mapHintBn"]} label="Map hint" kind="short" />
                   <ListEditor name={["location", "facts"]} addLabel="Add fact">
                     {(n, listPath) => (
                       <>
-                        <Pair pathPrefix={listPath} en={[n, "label"]} bn={[n, "labelBn"]} label="Label" />
-                        <Pair pathPrefix={listPath} en={[n, "value"]} bn={[n, "valueBn"]} label="Value" />
+                        <Pair pathPrefix={listPath} en={[n, "label"]} bn={[n, "labelBn"]} label="Label" kind="short" />
+                        <Pair pathPrefix={listPath} en={[n, "value"]} bn={[n, "valueBn"]} label="Value" kind="short" />
                       </>
                     )}
                   </ListEditor>
@@ -890,13 +1023,13 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
             title="Process (প্রক্রিয়া)"
             hint="The booking steps."
           >
-                  <Pair en={["process", "eyebrow"]} bn={["process", "eyebrowBn"]} label="Eyebrow" />
-                  <Pair en={["process", "title"]} bn={["process", "titleBn"]} label="Title" />
+                  <Pair en={["process", "eyebrow"]} bn={["process", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
+                  <Pair en={["process", "title"]} bn={["process", "titleBn"]} label="Title" kind="title" />
                   <ListEditor name={["process", "steps"]} addLabel="Add step">
                     {(n, listPath) => (
                       <>
-                        <Pair pathPrefix={listPath} en={[n, "title"]} bn={[n, "titleBn"]} label="Title" />
-                        <Pair pathPrefix={listPath} en={[n, "body"]} bn={[n, "bodyBn"]} label="Body" rows={2} />
+                        <Pair pathPrefix={listPath} en={[n, "title"]} bn={[n, "titleBn"]} label="Title" kind="title" />
+                        <Pair pathPrefix={listPath} en={[n, "body"]} bn={[n, "bodyBn"]} label="Body" rows={2} kind="body" />
                       </>
                     )}
                   </ListEditor>
@@ -909,12 +1042,12 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
             title="CTA band (কল ব্যান্ড)"
             hint="The band that asks the visitor to call or book."
           >
-                  <Pair en={["cta", "eyebrow"]} bn={["cta", "eyebrowBn"]} label="Eyebrow" />
-                  <Pair en={["cta", "title"]} bn={["cta", "titleBn"]} label="Title" />
-                  <Pair en={["cta", "description"]} bn={["cta", "descriptionBn"]} label="Description" rows={3} />
-                  <Pair en={["cta", "primary"]} bn={["cta", "primaryBn"]} label="Primary button" />
-                  <Pair en={["cta", "call"]} bn={["cta", "callBn"]} label="Call button" />
-                  <Pair en={["cta", "whatsapp"]} bn={["cta", "whatsappBn"]} label="WhatsApp button" />
+                  <Pair en={["cta", "eyebrow"]} bn={["cta", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
+                  <Pair en={["cta", "title"]} bn={["cta", "titleBn"]} label="Title" kind="title" />
+                  <Pair en={["cta", "description"]} bn={["cta", "descriptionBn"]} label="Description" rows={3} kind="description" />
+                  <Pair en={["cta", "primary"]} bn={["cta", "primaryBn"]} label="Primary button" kind="cta" />
+                  <Pair en={["cta", "call"]} bn={["cta", "callBn"]} label="Call button" kind="cta" />
+                  <Pair en={["cta", "whatsapp"]} bn={["cta", "whatsappBn"]} label="WhatsApp button" kind="cta" />
           </Block>
           </div>
 
@@ -924,21 +1057,21 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
             title="Reviews (রিভিউ)"
             hint="Client quotes and review videos."
           >
-                  <Pair en={["reviews", "eyebrow"]} bn={["reviews", "eyebrowBn"]} label="Eyebrow" />
-                  <Pair en={["reviews", "title"]} bn={["reviews", "titleBn"]} label="Title" />
-                  <Pair en={["reviews", "description"]} bn={["reviews", "descriptionBn"]} label="Description" rows={3} />
-                  <Pair en={["reviews", "play"]} bn={["reviews", "playBn"]} label="Play label" />
-                  <Pair en={["reviews", "close"]} bn={["reviews", "closeBn"]} label="Close label" />
+                  <Pair en={["reviews", "eyebrow"]} bn={["reviews", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
+                  <Pair en={["reviews", "title"]} bn={["reviews", "titleBn"]} label="Title" kind="title" />
+                  <Pair en={["reviews", "description"]} bn={["reviews", "descriptionBn"]} label="Description" rows={3} kind="description" />
+                  <Pair en={["reviews", "play"]} bn={["reviews", "playBn"]} label="Play label" kind="uiLabel" />
+                  <Pair en={["reviews", "close"]} bn={["reviews", "closeBn"]} label="Close label" kind="uiLabel" />
                   <ListEditor name={["reviews", "items"]} addLabel="Add review">
                     {(n, listPath) => (
                       <>
-                        <Pair pathPrefix={listPath} en={[n, "name"]} bn={[n, "nameBn"]} label="Name" />
-                        <Pair pathPrefix={listPath} en={[n, "role"]} bn={[n, "roleBn"]} label="Role" />
-                        <Pair pathPrefix={listPath} en={[n, "quote"]} bn={[n, "quoteBn"]} label="Quote" rows={3} />
+                        <Pair pathPrefix={listPath} en={[n, "name"]} bn={[n, "nameBn"]} label="Name" kind="short" />
+                        <Pair pathPrefix={listPath} en={[n, "role"]} bn={[n, "roleBn"]} label="Role" kind="short" />
+                        <Pair pathPrefix={listPath} en={[n, "quote"]} bn={[n, "quoteBn"]} label="Quote" rows={3} kind="body" />
                         <Form.Item name={[n, "videoUrl"]} label="Video URL">
                           <Input />
                         </Form.Item>
-                        <Form.Item label="Avatar" extra={imgHint(IMG_SIZE.avatar)}>
+                        <Form.Item label={imageLabel("Avatar", IMG_SIZE.avatar)} extra={imageExtra(IMG_SIZE.avatar)}>
                           <UploadMedia
                             form={form}
                             fieldPath={["reviews", "items", n, "avatarUrl"] as any}
@@ -958,14 +1091,14 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
             title="FAQ"
             hint="The questions under the reviews."
           >
-                  <Pair en={["faq", "eyebrow"]} bn={["faq", "eyebrowBn"]} label="Eyebrow" />
-                  <Pair en={["faq", "title"]} bn={["faq", "titleBn"]} label="Title" />
-                  <Pair en={["faq", "description"]} bn={["faq", "descriptionBn"]} label="Description" rows={3} />
+                  <Pair en={["faq", "eyebrow"]} bn={["faq", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
+                  <Pair en={["faq", "title"]} bn={["faq", "titleBn"]} label="Title" kind="title" />
+                  <Pair en={["faq", "description"]} bn={["faq", "descriptionBn"]} label="Description" rows={3} kind="description" />
                   <ListEditor name={["faq", "items"]} addLabel="Add question">
                     {(n, listPath) => (
                       <>
-                        <Pair pathPrefix={listPath} en={[n, "question"]} bn={[n, "questionBn"]} label="Question" rows={2} />
-                        <Pair pathPrefix={listPath} en={[n, "answer"]} bn={[n, "answerBn"]} label="Answer" rows={3} />
+                        <Pair pathPrefix={listPath} en={[n, "question"]} bn={[n, "questionBn"]} label="Question" rows={2} kind="description" />
+                        <Pair pathPrefix={listPath} en={[n, "answer"]} bn={[n, "answerBn"]} label="Answer" rows={3} kind="body" />
                       </>
                     )}
                   </ListEditor>
@@ -978,26 +1111,26 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
             title="Enquire (বুকিং ফর্ম)"
             hint="The booking form and its field labels."
           >
-                  <Pair en={["enquire", "eyebrow"]} bn={["enquire", "eyebrowBn"]} label="Eyebrow" />
-                  <Pair en={["enquire", "title"]} bn={["enquire", "titleBn"]} label="Title" />
-                  <Pair en={["enquire", "description"]} bn={["enquire", "descriptionBn"]} label="Description" rows={3} />
-                  <Pair en={["enquire", "phoneLabel"]} bn={["enquire", "phoneLabelBn"]} label="Phone label" />
-                  <Pair en={["enquire", "whatsappLabel"]} bn={["enquire", "whatsappLabelBn"]} label="WhatsApp label" />
+                  <Pair en={["enquire", "eyebrow"]} bn={["enquire", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
+                  <Pair en={["enquire", "title"]} bn={["enquire", "titleBn"]} label="Title" kind="title" />
+                  <Pair en={["enquire", "description"]} bn={["enquire", "descriptionBn"]} label="Description" rows={3} kind="description" />
+                  <Pair en={["enquire", "phoneLabel"]} bn={["enquire", "phoneLabelBn"]} label="Phone label" kind="uiLabel" />
+                  <Pair en={["enquire", "whatsappLabel"]} bn={["enquire", "whatsappLabelBn"]} label="WhatsApp label" kind="uiLabel" />
                   <Form.Item name={["enquire", "source"]} label="Lead source">
                     <Input placeholder="Zoom Al Zahara" />
                   </Form.Item>
-                  <Pair en={["enquire", "form", "name"]} bn={["enquire", "form", "nameBn"]} label="Name field" />
-                  <Pair en={["enquire", "form", "namePlaceholder"]} bn={["enquire", "form", "namePlaceholderBn"]} label="Name placeholder" />
-                  <Pair en={["enquire", "form", "phone"]} bn={["enquire", "form", "phoneBn"]} label="Phone field" />
-                  <Pair en={["enquire", "form", "email"]} bn={["enquire", "form", "emailBn"]} label="Email field" />
-                  <Pair en={["enquire", "form", "plan"]} bn={["enquire", "form", "planBn"]} label="Plan field" />
-                  <Pair en={["enquire", "form", "message"]} bn={["enquire", "form", "messageBn"]} label="Message field" />
-                  <Pair en={["enquire", "form", "messagePlaceholder"]} bn={["enquire", "form", "messagePlaceholderBn"]} label="Message placeholder" />
-                  <Pair en={["enquire", "form", "submit"]} bn={["enquire", "form", "submitBn"]} label="Submit" />
-                  <Pair en={["enquire", "form", "submitting"]} bn={["enquire", "form", "submittingBn"]} label="Submitting" />
-                  <Pair en={["enquire", "form", "privacy"]} bn={["enquire", "form", "privacyBn"]} label="Privacy note" rows={2} />
-                  <Pair en={["enquire", "form", "successTitle"]} bn={["enquire", "form", "successTitleBn"]} label="Success title" />
-                  <Pair en={["enquire", "form", "successBody"]} bn={["enquire", "form", "successBodyBn"]} label="Success body" rows={2} />
+                  <Pair en={["enquire", "form", "name"]} bn={["enquire", "form", "nameBn"]} label="Name field" kind="uiLabel" />
+                  <Pair en={["enquire", "form", "namePlaceholder"]} bn={["enquire", "form", "namePlaceholderBn"]} label="Name placeholder" kind="short" />
+                  <Pair en={["enquire", "form", "phone"]} bn={["enquire", "form", "phoneBn"]} label="Phone field" kind="uiLabel" />
+                  <Pair en={["enquire", "form", "email"]} bn={["enquire", "form", "emailBn"]} label="Email field" kind="uiLabel" />
+                  <Pair en={["enquire", "form", "plan"]} bn={["enquire", "form", "planBn"]} label="Plan field" kind="uiLabel" />
+                  <Pair en={["enquire", "form", "message"]} bn={["enquire", "form", "messageBn"]} label="Message field" kind="uiLabel" />
+                  <Pair en={["enquire", "form", "messagePlaceholder"]} bn={["enquire", "form", "messagePlaceholderBn"]} label="Message placeholder" kind="short" />
+                  <Pair en={["enquire", "form", "submit"]} bn={["enquire", "form", "submitBn"]} label="Submit" kind="cta" />
+                  <Pair en={["enquire", "form", "submitting"]} bn={["enquire", "form", "submittingBn"]} label="Submitting" kind="uiLabel" />
+                  <Pair en={["enquire", "form", "privacy"]} bn={["enquire", "form", "privacyBn"]} label="Privacy note" rows={2} kind="note" />
+                  <Pair en={["enquire", "form", "successTitle"]} bn={["enquire", "form", "successTitleBn"]} label="Success title" kind="title" />
+                  <Pair en={["enquire", "form", "successBody"]} bn={["enquire", "form", "successBodyBn"]} label="Success body" rows={2} kind="description" />
           </Block>
           </div>
 
@@ -1007,8 +1140,8 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
             title="Custom (কাস্টম কন্টেন্ট)"
             hint="Bottom page section with a rich text editor — headings, lists, links, images. Place any free-form content here."
           >
-                  <Pair en={["custom", "eyebrow"]} bn={["custom", "eyebrowBn"]} label="Eyebrow" />
-                  <Pair en={["custom", "title"]} bn={["custom", "titleBn"]} label="Title" />
+                  <Pair en={["custom", "eyebrow"]} bn={["custom", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
+                  <Pair en={["custom", "title"]} bn={["custom", "titleBn"]} label="Title" kind="title" />
                   <CustomBodyEditors />
           </Block>
           </div>
