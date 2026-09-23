@@ -60,6 +60,14 @@ const isFieldInTab = (
 const mediaId = (m: any) => m?._id ?? m ?? undefined;
 const mediaPreview = (m: any) => mediaSrc(m) || undefined;
 
+/** Landing URL path: spaces out, lowercase, only a-z / 0-9 / -. */
+const sanitizeLandingPath = (raw: string) =>
+  String(raw || "")
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-{2,}/g, "-");
+
 /** Recommended upload sizes so frontend crops look clean. */
 const IMG_SIZE = {
   hero: "2400×1600 (3:2) or 2560×1440 (16:9). Full-bleed — keep subject center-right.",
@@ -744,10 +752,34 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
               <Col xs={24} md={10}>
                 <Form.Item
                   name="path"
-                  label="Landing path"
-                  rules={[{ required: true, message: "Path is required" }]}
+                  label={
+                    <span className="inline-flex items-center gap-1.5">
+                      Landing path
+                      <Tooltip title="স্পেস দিলে অটো মুছে যাবে। শুধু ছোট হাতের অক্ষর, সংখ্যা ও - রাখুন। উদাহরণ: zoom green → zoomgreen">
+                        <Info className="h-3.5 w-3.5 cursor-help text-primary-600" />
+                      </Tooltip>
+                    </span>
+                  }
+                  rules={[
+                    { required: true, message: "Path is required" },
+                    {
+                      pattern: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+                      message: "Use lowercase letters, numbers and hyphens only",
+                    },
+                  ]}
+                  normalize={sanitizeLandingPath}
+                  getValueFromEvent={(e) =>
+                    sanitizeLandingPath(
+                      typeof e === "string" ? e : e?.target?.value,
+                    )
+                  }
+                  extra={
+                    <span className="text-[11px] text-secondary-500">
+                      স্পেস অটো রিমুভ হবে · লাইভ URL: /bn/… অথবা /bn/p/…
+                    </span>
+                  }
                 >
-                  <Input placeholder="zoom-al-zahra" />
+                  <Input placeholder="zoomalzahara বা zoom-green-city" />
                 </Form.Item>
               </Col>
               <Col xs={24} md={6}>
