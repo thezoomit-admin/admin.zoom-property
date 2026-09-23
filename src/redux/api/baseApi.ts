@@ -172,6 +172,7 @@ export const baseApi = createApi({
     "notifications",
     "countries",
     "services-countries",
+    "budget-ranges",
     "error-logs",
     "dynamic-content",
     "showcase-videos",

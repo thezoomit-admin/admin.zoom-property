@@ -59,6 +59,10 @@ export const routePermissions: Record<string, RoutePermission> = {
     module: "Services Countries",
     action: "View",
   },
+  "/settings/budget-ranges": {
+    module: "Budget Ranges",
+    action: "View",
+  },
 };
 
 export const getRoutePermission = (
