@@ -265,6 +265,12 @@ const buildSectionPayload = (
       ? { ...(section as Record<string, unknown>) }
       : {};
   if (typeof visible === "boolean") body.visible = visible;
+
+  // Keep legacy hero.image in sync with the first slideshow frame.
+  if (tab === "hero" && Array.isArray(body.images) && body.images.length) {
+    body.image = body.images[0];
+  }
+
   return stripPreview(body) as Record<string, unknown>;
 };
 
@@ -617,6 +623,15 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
       .map((img: any) => ({ id: mediaId(img), url: mediaPreview(img) }))
       .filter((p: { id: any; url: string | undefined }) => Boolean(p.id));
 
+    const heroImageList = (landing.hero?.images?.length
+      ? landing.hero.images
+      : landing.hero?.image
+        ? [landing.hero.image]
+        : []) as any[];
+    const heroPairs = heroImageList
+      .map((img: any) => ({ id: mediaId(img), url: mediaPreview(img) }))
+      .filter((p: { id: any; url: string | undefined }) => Boolean(p.id));
+
     form.setFieldsValue({
       path: landing.path || project?.slug || "",
       isActive: landing.isActive ?? true,
@@ -636,8 +651,10 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
       },
       hero: {
         ...landing.hero,
-        image: mediaId(landing.hero?.image),
-        imageUrl: mediaPreview(landing.hero?.image),
+        image: heroPairs[0]?.id,
+        imageUrl: heroPairs[0]?.url || "",
+        images: heroPairs.map((p: { id: any }) => p.id),
+        imageUrls: heroPairs.map((p: { url?: string }) => p.url || ""),
         stats: landing.hero?.stats || [],
       },
       about: {
@@ -889,10 +906,19 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
           <Block
             sectionKey="hero"
             title="Hero (হিরো)"
-            hint="The first screen: photo, title, location and the two buttons."
+            hint="First screen. Upload multiple hero images — they crossfade like the home page slider."
           >
-                  <Form.Item label="Hero image" tooltip={imageTooltip(IMG_SIZE.hero)}>
-                    <UploadMedia form={form} fieldPath={["hero", "imageUrl"] as any} idFieldPath={["hero", "image"]} type="image" />
+                  <Form.Item
+                    label="Hero images (slider)"
+                    tooltip={imageTooltip(IMG_SIZE.hero)}
+                  >
+                    <UploadMedia
+                      form={form}
+                      fieldPath={["hero", "imageUrls"] as any}
+                      idFieldPath={["hero", "images"]}
+                      mode="multiple"
+                      type="image"
+                    />
                   </Form.Item>
                   <Pair en={["hero", "badge"]} bn={["hero", "badgeBn"]} label="Badge" kind="badge" />
                   <Pair en={["hero", "handover"]} bn={["hero", "handoverBn"]} label="Handover badge" kind="badge" />
@@ -1046,7 +1072,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
           <Block
             sectionKey="amenities"
             title="Amenities (সুবিধা)"
-            hint="The amenity cards under the films."
+            hint="Maps link দিলেই location pin দেখাবে; না দিলে pin থাকবে না। Pin ক্লিক = প্রজেক্ট থেকে রুট।"
           >
                   <Pair en={["amenities", "eyebrow"]} bn={["amenities", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
                   <Pair en={["amenities", "title"]} bn={["amenities", "titleBn"]} label="Title" kind="title" />
@@ -1054,11 +1080,24 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
                   <ListEditor name={["amenities", "items"]} addLabel="Add amenity">
                     {(n, listPath) => (
                       <>
-                        <Pair pathPrefix={listPath} en={[n, "title"]} bn={[n, "titleBn"]} label="Title" kind="title" />
+                        <Pair pathPrefix={listPath} en={[n, "title"]} bn={[n, "titleBn"]} label="Title (place name)" kind="title" />
                         <Pair pathPrefix={listPath} en={[n, "body"]} bn={[n, "bodyBn"]} label="Body" rows={2} kind="body" />
                         <Form.Item name={[n, "icon"]} {...plainField("Icon", "icon")}>
                           <Input />
                         </Form.Item>
+                        <Form.Item
+                          name={[n, "mapUrl"]}
+                          {...plainField("Maps link (optional)", "url")}
+                        >
+                          <Input placeholder="Optional — paste Google Maps link" />
+                        </Form.Item>
+                        <Pair
+                          pathPrefix={listPath}
+                          en={[n, "distance"]}
+                          bn={[n, "distanceBn"]}
+                          label="Distance (optional)"
+                          kind="short"
+                        />
                       </>
                     )}
                   </ListEditor>

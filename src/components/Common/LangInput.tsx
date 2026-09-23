@@ -47,8 +47,14 @@ export const translateToBanglaApi = async (text: string): Promise<string> => {
   return text;
 };
 
+/**
+ * Bangla script + common punctuation/digits.
+ * Allows middot (·), en/em dashes, etc. used in CMS badges like
+ * "ল্যান্ড শেয়ার · বুকিং চালু" / "জি+৯ · ১০ তলা".
+ * Still blocks Latin A–Z so EN copy does not sneak into BN fields.
+ */
 export const BANGLA_REGEX =
-  /^[\u0980-\u09FF\u0964\u0965\u200C\u200D\s0-9.,!()"'\-/:;?%&+“”‘’—–]*$/;
+  /^[\u0980-\u09FF\u0964\u0965\u200C\u200D\s0-9.,!()"'\-/:;?%&+*=#@~^\[\]{}·•…“”‘’—–−]*$/;
 const ENGLISH_ONLY_REGEX = /^[^\u0980-\u09FF]*$/;
 
 export const BANGLA_RULE = {
