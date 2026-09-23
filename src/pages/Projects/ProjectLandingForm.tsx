@@ -60,7 +60,41 @@ const isFieldInTab = (
   return root === tab;
 };
 
-const mediaId = (m: any) => m?._id ?? m ?? undefined;
+const mediaId = (m: any): string | undefined => {
+  const raw = m?._id ?? m?.id ?? m;
+  if (raw == null || raw === "") return undefined;
+  if (typeof raw === "string") {
+    const s = raw.trim();
+    return /^[a-f0-9]{24}$/i.test(s) ? s : undefined;
+  }
+  if (typeof raw?.toHexString === "function") {
+    try {
+      return raw.toHexString();
+    } catch {
+      /* fall through */
+    }
+  }
+  if (typeof raw?.toString === "function") {
+    const s = String(raw.toString());
+    if (/^[a-f0-9]{24}$/i.test(s)) return s;
+  }
+  // Recover mangled ObjectId `{ buffer: {0:n,…} }` from a bad API round-trip.
+  const buf = raw?.buffer;
+  if (buf && typeof buf === "object") {
+    try {
+      const keys = Object.keys(buf).sort((a, b) => Number(a) - Number(b));
+      if (keys.length === 12) {
+        const hex = keys
+          .map((k) => Number(buf[k]).toString(16).padStart(2, "0"))
+          .join("");
+        if (/^[a-f0-9]{24}$/i.test(hex)) return hex;
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  return undefined;
+};
 const mediaPreview = (m: any) => mediaSrc(m) || undefined;
 
 /** Soft-normalize path: lowercase only — spaces stay so validation can warn. */
