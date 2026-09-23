@@ -1,16 +1,19 @@
 import { Button, Card, Col, Form, Input, Row, Select, Space, Switch, Tabs, Tooltip } from "antd";
-import { ArrowLeft, ExternalLink, Info, Languages, Loader2, Plus, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { ArrowLeft, ExternalLink, Languages, Loader2, Plus, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import PageHeader from "../../components/Common/PageHeader";
 import PageMeta from "../../components/Common/PageMeta";
 import LangInput, {
+  fieldTooltip,
   translateToBanglaApi,
 } from "../../components/Common/LangInput";
 import RichTextEditor from "../../components/Common/RichEditor/RichTextEditor";
 import UploadMedia from "../../components/shared/UploadMedia";
+import PhoneInputField from "../../components/shared/PhoneInputField";
 import { mediaSrc } from "../../utils/mediaSrc";
 import { publicLandingUrl } from "../../utils/landing";
 import {
@@ -60,22 +63,18 @@ const isFieldInTab = (
 const mediaId = (m: any) => m?._id ?? m ?? undefined;
 const mediaPreview = (m: any) => mediaSrc(m) || undefined;
 
-/** Landing URL path: spaces out, lowercase, only a-z / 0-9 / -. */
-const sanitizeLandingPath = (raw: string) =>
-  String(raw || "")
-    .toLowerCase()
-    .replace(/\s+/g, "")
-    .replace(/[^a-z0-9-]/g, "")
-    .replace(/-{2,}/g, "-");
+/** Soft-normalize path: lowercase only — spaces stay so validation can warn. */
+const normalizeLandingPathCase = (raw: string) =>
+  String(raw || "").toLowerCase();
 
 /** Recommended upload sizes so frontend crops look clean. */
 const IMG_SIZE = {
-  hero: "2400×1600 (3:2) or 2560×1440 (16:9). Full-bleed — keep subject center-right.",
-  about: "Wide composite 1800×1200 (3:2). Shown with object-contain (no squash on mobile).",
-  residences: "1600×1200 (4:3) or wide 2000×1200. Shown with object-contain (no crop).",
-  elevation: "Tall 1200×1800 (2:3) or wide 2000×1400. Object-contain — different from Gallery.",
-  gallery: "1920×1080 (16:9). Main viewer uses a 16:9 crop.",
-  avatar: "400×400 (1:1). Shown as a small circle — face centered.",
+  hero: "সাইজ: ২৪০০×১৬০০ (৩:২) বা ২৫৬০×১৪৪০ (১৬:৯)। ফুল-স্ক্রিন ব্যাকগ্রাউন্ড — সাবজেক্ট মাঝে/ডানে রাখুন।",
+  about: "সাইজ: ১৮০০×১২০০ (৩:২)। মোবাইলে চেপে যাবে না (object-contain)।",
+  residences: "সাইজ: ১৬০০×১২০০ (৪:৩) বা ২০০০×১২০০। ক্রপ ছাড়া পুরো দেখাবে।",
+  elevation: "সাইজ: লম্বা ১২০০×১৮০০ (২:৩) বা চওড়া ২০০০×১৪০০। গ্যালারি থেকে আলাদা।",
+  gallery: "সাইজ: ১৯২০×১০৮০ (১৬:৯)। মেইন ভিউয়ার ১৬:৯ ক্রপ করে।",
+  avatar: "সাইজ: ৪০০×৪০০ (১:১)। গোল সার্কেলে দেখায় — মুখ মাঝে রাখুন।",
 } as const;
 
 /** Soft length guides so live landing typography stays tidy. */
@@ -98,114 +97,124 @@ type FieldKind =
   | "caption"
   | "note"
   | "unitSpec"
-  | "nav";
+  | "nav"
+  | "icon"
+  | "url"
+  | "phone";
 
 const FIELD_GUIDE: Record<
   FieldKind,
-  { tip: string; softMax: number; optional?: boolean }
+  { tip: string; softMax?: number; optional?: boolean }
 > = {
   eyebrow: {
-    tip: "Small uppercase label above the title.",
+    tip: "টাইটেলের উপরের ছোট লেবেল (যেমন: ফ্ল্যাট / প্রকল্প)।",
     softMax: 22,
   },
   title: {
-    tip: "Section heading on the live page.",
+    tip: "সেকশনের মূল শিরোনাম — লাইভ পেজে বড় করে দেখায়।",
     softMax: 48,
   },
   heroTitle: {
-    tip: "Main hero headline — the biggest text on the first screen.",
+    tip: "হিরোর সবচেয়ে বড় শিরোনাম — প্রথম স্ক্রিনের মেইন টেক্সট।",
     softMax: 42,
   },
   lead: {
-    tip: "One short supporting sentence under the hero title.",
+    tip: "হিরো টাইটেলের নিচে এক লাইনের সাপোর্ট টেক্সট।",
     softMax: 140,
   },
   body: {
-    tip: "Paragraph body. Keep it scannable — long blocks feel heavy on mobile.",
+    tip: "অনুচ্ছেদ / বিস্তারিত লেখা। মোবাইলে পড়তে সুবিধা হয় এমন ছোট রাখুন।",
     softMax: 280,
   },
   description: {
-    tip: "Section intro under the title.",
+    tip: "টাইটেলের নিচের সংক্ষিপ্ত বর্ণনা।",
     softMax: 160,
   },
   badge: {
-    tip: "Tiny pill / badge. Very short so it stays on one line.",
+    tip: "ছোট ব্যাজ/পিল টেক্সট — এক লাইনে থাকতে হবে।",
     softMax: 18,
   },
   cta: {
-    tip: "Button label. Short verbs work best (Book / Call / Enquire).",
+    tip: "বাটনের লেখা (যেমন: বুক করুন / কল)। ছোট রাখুন।",
     softMax: 22,
   },
   uiLabel: {
-    tip: "UI chrome label (Preview / Close / Play). Keep compact.",
+    tip: "ছোট UI লেবেল (Preview / Close / Play)। খুব সংক্ষিপ্ত।",
     softMax: 16,
   },
   price: {
-    tip: "Optional. Short price note beside the unit name (e.g. “Land share from ৳…”). Leave empty to hide the price on the site.",
+    tip: "ঐচ্ছিক। ইউনিট নামের পাশে দামের নোট। খালি রাখলে সাইটে দাম দেখাবে না।",
     softMax: 36,
     optional: true,
   },
   metaTitle: {
-    tip: "Browser / SEO title. Search results usually show about 50–60 characters.",
+    tip: "ব্রাউজার ট্যাব / গুগল সার্চের টাইটেল।",
     softMax: 60,
   },
   metaDesc: {
-    tip: "SEO description under the title in search results.",
+    tip: "সার্চ রেজাল্টে টাইটেলের নিচের বর্ণনা।",
     softMax: 155,
   },
   short: {
-    tip: "Short single line of text.",
+    tip: "এক লাইনের ছোট টেক্সট।",
     softMax: 40,
   },
   statValue: {
-    tip: "Big number or short value in a hero stat chip.",
+    tip: "স্ট্যাটের বড় সংখ্যা/মান (যেমন: ৪.২৯ বা G+৯)।",
     softMax: 10,
   },
   statLabel: {
-    tip: "Label under a hero stat value.",
+    tip: "স্ট্যাটের নিচের ছোট লেবেল (যেমন: কাঠা, তলা)।",
     softMax: 16,
   },
   caption: {
-    tip: "Caption under a film or photo card.",
+    tip: "ছবি/ভিডিওর নিচের ক্যাপশন।",
     softMax: 48,
   },
   note: {
-    tip: "Supporting note under the unit name.",
+    tip: "ঐচ্ছিক সাপোর্ট নোট।",
     softMax: 100,
     optional: true,
   },
   unitSpec: {
-    tip: "Beds / baths / size chip — keep short (e.g. “4 Beds”, “1,544 sq ft”).",
+    tip: "বেড/বাথ/সাইজ চিপ — ছোট রাখুন (যেমন: ৪ বেড, ১,৫৪৪ বর্গফুট)।",
     softMax: 18,
   },
   nav: {
-    tip: "Header “Book” button label.",
+    tip: "হেডারের “বুক” বাটনের লেখা।",
     softMax: 18,
+  },
+  icon: {
+    tip: "FontAwesome ক্লাস দিন (যেমন: fa-solid fa-building)।",
+  },
+  url: {
+    tip: "পুরো লিংক দিন — https:// দিয়ে শুরু।",
+  },
+  phone: {
+    tip: "মোবাইল নম্বর — ডিফল্ট বাংলাদেশ (+880)। ফ্ল্যাগ থেকে অন্য দেশও বেছে নিতে পারবেন।",
   },
 };
 
-const imageLabel = (label: string, hint: string) => (
-  <span className="inline-flex items-center gap-1.5">
-    {label}
-    <Tooltip
-      title={
-        <div className="max-w-xs text-xs leading-relaxed">
-          <p className="font-medium">Recommended size</p>
-          <p className="mt-1 text-white/90">{hint}</p>
-        </div>
-      }
-    >
-      <Info className="h-3.5 w-3.5 cursor-help text-primary-600 hover:text-primary-700" />
-    </Tooltip>
-  </span>
-);
+const imageTooltip = (hint: string) =>
+  fieldTooltip(`ছবির সাইজ গাইড: ${hint}`);
 
-const imageExtra = (hint: string) => (
-  <span className="mt-1 inline-flex max-w-full items-start gap-1 rounded-md border border-primary-200/60 bg-primary-50 px-2 py-1 text-[11px] font-medium leading-snug text-primary-800">
-    <span aria-hidden>📐</span>
-    <span>{hint}</span>
-  </span>
-);
+/** Plain Form.Item label + Ant Design tooltip (same as text fields). */
+const plainField = (label: string, kind: FieldKind) => {
+  const g = FIELD_GUIDE[kind];
+  return {
+    label: g.optional ? (
+      <span>
+        {label}{" "}
+        <span className="text-[11px] font-normal text-secondary-400">
+          (optional)
+        </span>
+      </span>
+    ) : (
+      label
+    ),
+    tooltip: fieldTooltip(g.tip, g.softMax),
+  };
+};
 
 const stripPreview = (value: unknown): unknown => {
   if (Array.isArray(value)) return value.map(stripPreview);
@@ -395,12 +404,7 @@ function CustomBodyEditors() {
       <Form.Item
         name={["custom", "body"]}
         label="Body (English)"
-        extra={
-          <span className="text-xs text-secondary-500">
-            Use headings, lists, links and images — shown at the bottom of the
-            public landing page.
-          </span>
-        }
+        tooltip="ল্যান্ডিং পেজের নিচে দেখাবে — হেডিং, লিস্ট, লিংক, ছবি ব্যবহার করতে পারবেন। দৈর্ঘ্যের সীমা নেই, তবে খুব লম্বা হলে স্ক্রল বাড়বে।"
       >
         <RichTextEditor
           placeholder="Write free-form content in English..."
@@ -433,6 +437,7 @@ function CustomBodyEditors() {
             </Tooltip>
           </div>
         }
+        tooltip="বাংলা সাইটে এই লেখাটি দেখাবে। ইংরেজি থেকে “বাংলা করুন” চাপতে পারেন।"
       >
         <RichTextEditor placeholder="বাংলায় লিখুন..." height={420} />
       </Form.Item>
@@ -617,50 +622,70 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
     });
   }, [initial, project, form]);
 
-  const handleSave = async () => {
-    setSubmitting(true);
-    try {
-      const allFields = form.getFieldsError();
+  const handleSave = (e?: MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    if (submitting || saving) return;
 
-      // Drop leftover errors from other tabs so they don't confuse the UI.
-      const foreign = allFields.filter((f) => !isFieldInTab(f.name, activeTab));
-      if (foreign.length) {
-        form.setFields(foreign.map((f) => ({ name: f.name, errors: [] })));
-      }
+    // Force the spinner to paint on this click before any form work.
+    flushSync(() => {
+      setSubmitting(true);
+    });
 
-      const toValidate = allFields
-        .map((f) => f.name)
-        .filter((name) => isFieldInTab(name, activeTab));
+    const startedAt = Date.now();
 
-      // Publishing: path is always required even if not yet in error list.
-      if (activeTab === "publishing") {
-        const hasPath = toValidate.some(
-          (n) => (Array.isArray(n) ? n[0] : n) === "path",
+    void (async () => {
+      const finish = async () => {
+        const wait = Math.max(0, 450 - (Date.now() - startedAt));
+        if (wait) await new Promise((r) => setTimeout(r, wait));
+        setSubmitting(false);
+      };
+
+      try {
+        // Yield so the browser can actually paint the loading button.
+        await new Promise<void>((r) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => r())),
         );
-        if (!hasPath) toValidate.push(["path"]);
-      }
 
-      if (toValidate.length) {
-        await form.validateFields(toValidate);
-      }
+        const allFields = form.getFieldsError();
 
-      const values = form.getFieldsValue(true);
-      await onSubmit(stripPreview(values));
-    } catch (err: any) {
-      const errorFields = err?.errorFields as
-        | { name: (string | number)[]; errors: string[] }[]
-        | undefined;
-      // Stay on the current tab — only show errors for this tab.
-      const msg =
-        errorFields?.find((f) => isFieldInTab(f.name, activeTab))?.errors?.[0] ||
-        errorFields?.[0]?.errors?.[0] ||
-        err?.data?.message ||
-        err?.message ||
-        "Could not save the landing page";
-      toast.error(msg, { position: "top-center" });
-    } finally {
-      setSubmitting(false);
-    }
+        const foreign = allFields.filter((f) => !isFieldInTab(f.name, activeTab));
+        if (foreign.length) {
+          form.setFields(foreign.map((f) => ({ name: f.name, errors: [] })));
+        }
+
+        const toValidate = allFields
+          .map((f) => f.name)
+          .filter((name) => isFieldInTab(name, activeTab));
+
+        if (activeTab === "publishing") {
+          const hasPath = toValidate.some(
+            (n) => (Array.isArray(n) ? n[0] : n) === "path",
+          );
+          if (!hasPath) toValidate.push(["path"]);
+        }
+
+        if (toValidate.length) {
+          await form.validateFields(toValidate);
+        }
+
+        const values = form.getFieldsValue(true);
+        await onSubmit(stripPreview(values));
+      } catch (err: any) {
+        const errorFields = err?.errorFields as
+          | { name: (string | number)[]; errors: string[] }[]
+          | undefined;
+        const msg =
+          errorFields?.find((f) => isFieldInTab(f.name, activeTab))?.errors?.[0] ||
+          errorFields?.[0]?.errors?.[0] ||
+          err?.data?.message ||
+          err?.message ||
+          "Could not save the landing page";
+        toast.error(msg, { position: "top-center" });
+      } finally {
+        await finish();
+      }
+    })();
   };
 
   const path = Form.useWatch("path", form);
@@ -752,59 +777,68 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
               <Col xs={24} md={10}>
                 <Form.Item
                   name="path"
-                  label={
-                    <span className="inline-flex items-center gap-1.5">
-                      Landing path
-                      <Tooltip title="স্পেস দিলে অটো মুছে যাবে। শুধু ছোট হাতের অক্ষর, সংখ্যা ও - রাখুন। উদাহরণ: zoom green → zoomgreen">
-                        <Info className="h-3.5 w-3.5 cursor-help text-primary-600" />
-                      </Tooltip>
-                    </span>
-                  }
+                  label="Landing path"
+                  tooltip={fieldTooltip(
+                    "লাইভ URL এর অংশ। স্পেস দেওয়া যাবে না — ছোট হাতের অক্ষর, সংখ্যা ও - ব্যবহার করুন (যেমন: zoomgreencity বা zoom-green-city)।",
+                  )}
+                  validateFirst
                   rules={[
-                    { required: true, message: "Path is required" },
+                    { required: true, message: "Landing path আবশ্যক" },
                     {
-                      pattern: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-                      message: "Use lowercase letters, numbers and hyphens only",
+                      validator: async (_, value) => {
+                        const v = String(value || "");
+                        if (!v) return;
+                        if (/\s/.test(v)) {
+                          throw new Error(
+                            "স্পেস দেওয়া যাবে না। স্পেস সরিয়ে একসাথে লিখুন, অথবা - ব্যবহার করুন (যেমন: zoom-green-city)।",
+                          );
+                        }
+                        if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(v)) {
+                          throw new Error(
+                            "শুধু ছোট হাতের ইংরেজি অক্ষর (a–z), সংখ্যা (0–9) ও হাইফেন (-) চলবে। বাংলা বা অন্য চিহ্ন নয়।",
+                          );
+                        }
+                      },
                     },
                   ]}
-                  normalize={sanitizeLandingPath}
+                  normalize={normalizeLandingPathCase}
                   getValueFromEvent={(e) =>
-                    sanitizeLandingPath(
+                    normalizeLandingPathCase(
                       typeof e === "string" ? e : e?.target?.value,
                     )
-                  }
-                  extra={
-                    <span className="text-[11px] text-secondary-500">
-                      স্পেস অটো রিমুভ হবে · লাইভ URL: /bn/… অথবা /bn/p/…
-                    </span>
                   }
                 >
                   <Input placeholder="zoomalzahara বা zoom-green-city" />
                 </Form.Item>
               </Col>
               <Col xs={24} md={6}>
-                <Form.Item name="isActive" label="Published" valuePropName="checked">
+                <Form.Item
+                  name="isActive"
+                  label="Published"
+                  valuePropName="checked"
+                  tooltip="চালু থাকলে পাবলিক সাইটে ল্যান্ডিং পেজ দেখা যাবে।"
+                >
                   <Switch />
                 </Form.Item>
               </Col>
               <Col xs={24} md={8}>
-                <Form.Item name="facebookUrl" label="Facebook URL">
+                <Form.Item name="facebookUrl" {...plainField("Facebook URL", "url")}>
                   <Input placeholder="https://facebook.com/..." />
                 </Form.Item>
               </Col>
               <Col xs={24} md={8}>
-                <Form.Item name="phonePrimary" label="Primary phone">
-                  <Input placeholder="01711-250406" />
+                <Form.Item name="phonePrimary" {...plainField("Primary phone", "phone")}>
+                  <PhoneInputField placeholder="01711-250406" />
                 </Form.Item>
               </Col>
               <Col xs={24} md={8}>
-                <Form.Item name="phoneSecondary" label="Secondary phone">
-                  <Input />
+                <Form.Item name="phoneSecondary" {...plainField("Secondary phone", "phone")}>
+                  <PhoneInputField />
                 </Form.Item>
               </Col>
               <Col xs={24} md={8}>
-                <Form.Item name="whatsapp" label="WhatsApp">
-                  <Input />
+                <Form.Item name="whatsapp" {...plainField("WhatsApp", "phone")}>
+                  <PhoneInputField />
                 </Form.Item>
               </Col>
             </Row>
@@ -819,7 +853,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
             title="Hero (হিরো)"
             hint="The first screen: photo, title, location and the two buttons."
           >
-                  <Form.Item label={imageLabel("Hero image", IMG_SIZE.hero)} extra={imageExtra(IMG_SIZE.hero)}>
+                  <Form.Item label="Hero image" tooltip={imageTooltip(IMG_SIZE.hero)}>
                     <UploadMedia form={form} fieldPath={["hero", "imageUrl"] as any} idFieldPath={["hero", "image"]} type="image" />
                   </Form.Item>
                   <Pair en={["hero", "badge"]} bn={["hero", "badgeBn"]} label="Badge" kind="badge" />
@@ -836,7 +870,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                       <>
                         <Pair pathPrefix={listPath} en={[n, "value"]} bn={[n, "valueBn"]} label="Value" kind="statValue" />
                         <Pair pathPrefix={listPath} en={[n, "label"]} bn={[n, "labelBn"]} label="Label" kind="statLabel" />
-                        <Form.Item name={[n, "icon"]} label="Icon">
+                        <Form.Item name={[n, "icon"]} {...plainField("Icon", "icon")}>
                           <Input placeholder='fa-solid fa-building' />
                         </Form.Item>
                       </>
@@ -851,7 +885,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
             title="About (প্রকল্প)"
             hint="The project story, the side photo and the points beside it."
           >
-                  <Form.Item label={imageLabel("Side image", IMG_SIZE.about)} extra={imageExtra(IMG_SIZE.about)}>
+                  <Form.Item label="Side image" tooltip={imageTooltip(IMG_SIZE.about)}>
                     <UploadMedia form={form} fieldPath={["about", "imageUrl"] as any} idFieldPath={["about", "image"]} type="image" />
                   </Form.Item>
                   <Pair en={["about", "eyebrow"]} bn={["about", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
@@ -862,7 +896,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                       <>
                         <Pair pathPrefix={listPath} en={[n, "title"]} bn={[n, "titleBn"]} label="Title" kind="title" />
                         <Pair pathPrefix={listPath} en={[n, "body"]} bn={[n, "bodyBn"]} label="Body" rows={2} kind="body" />
-                        <Form.Item name={[n, "icon"]} label="Icon">
+                        <Form.Item name={[n, "icon"]} {...plainField("Icon", "icon")}>
                           <Input placeholder="fa-solid fa-handshake" />
                         </Form.Item>
                       </>
@@ -877,7 +911,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
             title="Residences (ফ্ল্যাট)"
             hint="Flat photos, the featured unit and its highlights."
           >
-                  <Form.Item label={imageLabel("Residence images", IMG_SIZE.residences)} extra={imageExtra(IMG_SIZE.residences)}>
+                  <Form.Item label="Residence images" tooltip={imageTooltip(IMG_SIZE.residences)}>
                     <UploadMedia form={form} fieldPath={["residences", "imageUrls"] as any} idFieldPath={["residences", "images"]} mode="multiple" type="image" />
                   </Form.Item>
                   <Pair en={["residences", "eyebrow"]} bn={["residences", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
@@ -898,7 +932,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                       <>
                         <Pair pathPrefix={listPath} en={[n, "label"]} bn={[n, "labelBn"]} label="Label" kind="short" />
                         <Pair pathPrefix={listPath} en={[n, "value"]} bn={[n, "valueBn"]} label="Value" kind="short" />
-                        <Form.Item name={[n, "icon"]} label="Icon">
+                        <Form.Item name={[n, "icon"]} {...plainField("Icon", "icon")}>
                           <Input />
                         </Form.Item>
                       </>
@@ -923,7 +957,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                       <>
                         <Pair pathPrefix={listPath} en={[n, "label"]} bn={[n, "labelBn"]} label="Label" kind="caption" />
                         <Pair pathPrefix={listPath} en={[n, "hint"]} bn={[n, "hintBn"]} label="Hint" kind="caption" />
-                        <Form.Item label={imageLabel("Image", IMG_SIZE.elevation)} extra={imageExtra(IMG_SIZE.elevation)}>
+                        <Form.Item label="Image" tooltip={imageTooltip(IMG_SIZE.elevation)}>
                           <UploadMedia
                             form={form}
                             fieldPath={["elevation", "views", n, "imageUrl"] as any}
@@ -952,10 +986,10 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                       <>
                         <Pair pathPrefix={listPath} en={[n, "title"]} bn={[n, "titleBn"]} label="Title" kind="title" />
                         <Pair pathPrefix={listPath} en={[n, "caption"]} bn={[n, "captionBn"]} label="Caption" kind="caption" />
-                        <Form.Item name={[n, "url"]} label="Video URL">
+                        <Form.Item name={[n, "url"]} {...plainField("Video URL", "url")}>
                           <Input placeholder="Facebook or YouTube URL" />
                         </Form.Item>
-                        <Form.Item name={[n, "provider"]} label="Provider">
+                        <Form.Item name={[n, "provider"]} {...plainField("Provider", "short")}>
                           <Select
                             allowClear
                             options={[
@@ -984,7 +1018,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                       <>
                         <Pair pathPrefix={listPath} en={[n, "title"]} bn={[n, "titleBn"]} label="Title" kind="title" />
                         <Pair pathPrefix={listPath} en={[n, "body"]} bn={[n, "bodyBn"]} label="Body" rows={2} kind="body" />
-                        <Form.Item name={[n, "icon"]} label="Icon">
+                        <Form.Item name={[n, "icon"]} {...plainField("Icon", "icon")}>
                           <Input />
                         </Form.Item>
                       </>
@@ -1007,7 +1041,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                     {(n, listPath) => (
                       <>
                         <Pair pathPrefix={listPath} en={[n, "label"]} bn={[n, "labelBn"]} label="Label" kind="caption" />
-                        <Form.Item label={imageLabel("Image", IMG_SIZE.gallery)} extra={imageExtra(IMG_SIZE.gallery)}>
+                        <Form.Item label="Image" tooltip={imageTooltip(IMG_SIZE.gallery)}>
                           <UploadMedia
                             form={form}
                             fieldPath={["gallery", "shots", n, "imageUrl"] as any}
@@ -1030,10 +1064,10 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                   <Pair en={["location", "eyebrow"]} bn={["location", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
                   <Pair en={["location", "title"]} bn={["location", "titleBn"]} label="Title" kind="title" />
                   <Pair en={["location", "description"]} bn={["location", "descriptionBn"]} label="Description" rows={3} kind="description" />
-                  <Form.Item name={["location", "mapEmbedUrl"]} label="Map embed URL">
+                  <Form.Item name={["location", "mapEmbedUrl"]} {...plainField("Map embed URL", "url")}>
                     <Input placeholder="https://maps.google.com/maps?q=...&output=embed" />
                   </Form.Item>
-                  <Form.Item name={["location", "mapLinkUrl"]} label="Open in Maps URL">
+                  <Form.Item name={["location", "mapLinkUrl"]} {...plainField("Open in Maps URL", "url")}>
                     <Input />
                   </Form.Item>
                   <Pair en={["location", "mapOpen"]} bn={["location", "mapOpenBn"]} label="Open label" kind="uiLabel" />
@@ -1100,10 +1134,10 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                         <Pair pathPrefix={listPath} en={[n, "name"]} bn={[n, "nameBn"]} label="Name" kind="short" />
                         <Pair pathPrefix={listPath} en={[n, "role"]} bn={[n, "roleBn"]} label="Role" kind="short" />
                         <Pair pathPrefix={listPath} en={[n, "quote"]} bn={[n, "quoteBn"]} label="Quote" rows={3} kind="body" />
-                        <Form.Item name={[n, "videoUrl"]} label="Video URL">
+                        <Form.Item name={[n, "videoUrl"]} {...plainField("Video URL", "url")}>
                           <Input />
                         </Form.Item>
-                        <Form.Item label={imageLabel("Avatar", IMG_SIZE.avatar)} extra={imageExtra(IMG_SIZE.avatar)}>
+                        <Form.Item label="Avatar" tooltip={imageTooltip(IMG_SIZE.avatar)}>
                           <UploadMedia
                             form={form}
                             fieldPath={["reviews", "items", n, "avatarUrl"] as any}
@@ -1148,7 +1182,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
                   <Pair en={["enquire", "description"]} bn={["enquire", "descriptionBn"]} label="Description" rows={3} kind="description" />
                   <Pair en={["enquire", "phoneLabel"]} bn={["enquire", "phoneLabelBn"]} label="Phone label" kind="uiLabel" />
                   <Pair en={["enquire", "whatsappLabel"]} bn={["enquire", "whatsappLabelBn"]} label="WhatsApp label" kind="uiLabel" />
-                  <Form.Item name={["enquire", "source"]} label="Lead source">
+                  <Form.Item name={["enquire", "source"]} {...plainField("Lead source", "short")}>
                     <Input placeholder="Zoom Al Zahara" />
                   </Form.Item>
                   <Pair en={["enquire", "form", "name"]} bn={["enquire", "form", "nameBn"]} label="Name field" kind="uiLabel" />
@@ -1180,16 +1214,23 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmit }: Props) => {
         </Card>
 
         <div className="sticky bottom-4 z-10 flex items-center justify-end gap-3 rounded-lg border border-gray-300 bg-white/95 p-4 shadow-md backdrop-blur-md">
-          <Button onClick={() => navigate("/projects")} disabled={busy}>
+          <Button
+            htmlType="button"
+            onClick={() => navigate("/projects")}
+            disabled={busy}
+          >
             Cancel
           </Button>
           <Button
+            htmlType="button"
             type="primary"
             loading={busy}
+            disabled={busy}
             size="large"
             onClick={handleSave}
+            className="min-w-[12rem] !flex items-center justify-center"
           >
-            Save landing page
+            {busy ? "সেভ হচ্ছে..." : "Save landing page"}
           </Button>
         </div>
       </Form>
