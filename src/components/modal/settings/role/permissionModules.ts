@@ -82,6 +82,7 @@ export const PERMISSION_MODULES: PermissionModule[] = [
   { module: "Action Logs", permissions: ["View", "Delete"], group: "Logs" },
   { module: "Error Logs", permissions: ["View", "Delete"], group: "Logs" },
 
+  { module: "Budget Ranges", permissions: CRUD, group: "Settings" },
   {
     module: "Media Bin",
     permissions: ["View", "Restore", "Delete"],

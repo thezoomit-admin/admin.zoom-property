@@ -23,6 +23,7 @@ import {
   Trash2,
   UserRound,
   Users,
+  Wallet,
 } from "lucide-react";
 import {
   ActionLogsIcon,
@@ -258,6 +259,12 @@ const sidebarMenuRoutes: RouteItem[] = [
         address: "/settings/roles",
         icon: Shield,
         module: "Roles",
+      },
+      {
+        label: "Budget Ranges",
+        address: "/settings/budget-ranges",
+        module: "Budget Ranges",
+        icon: Wallet,
       },
       {
         label: "Media Library",

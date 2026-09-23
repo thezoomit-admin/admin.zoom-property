@@ -62,6 +62,25 @@ const projectApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["projects"],
     }),
+
+    saveProjectLandingSection: builder.mutation({
+      query: ({
+        id,
+        section,
+        data,
+      }: {
+        id: string;
+        section: string;
+        data: any;
+      }) => ({
+        url: `projects/${id}/landing/${section}`,
+        method: "PATCH",
+        body: data,
+      }),
+      // Form already holds the saved values — skip refetching every project /
+      // full landing (that was making section save feel as slow as full save).
+      invalidatesTags: [],
+    }),
   }),
 });
 
@@ -73,4 +92,5 @@ export const {
   useDeleteProjectMutation,
   useGetProjectLandingQuery,
   useSaveProjectLandingMutation,
+  useSaveProjectLandingSectionMutation,
 } = projectApi;

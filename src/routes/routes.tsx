@@ -42,6 +42,7 @@ import PropertyTypes from "../pages/Settings/Amenities/PropertyTypes";
 import MediaBin from "../pages/Settings/MediaBin/MediaBin";
 import NotificationSounds from "../pages/Settings/NotificationSounds/NotificationSounds";
 import ServicesCountries from "../pages/Settings/ServicesCountries/ServicesCountries";
+import BudgetRanges from "../pages/Settings/BudgetRanges/BudgetRanges";
 import UserGuide from "../pages/UserGuide/UserGuide";
 import EmployeeDetails from "../pages/Users/EmployeeDetails";
 import RolePermissions from "../pages/Users/RolePermissions";
@@ -182,6 +183,7 @@ const routes = [
           { path: "property-types", element: <PropertyTypes /> },
           { path: "designation", element: <Designation /> },
           { path: "services-countries", element: <ServicesCountries /> },
+          { path: "budget-ranges", element: <BudgetRanges /> },
           { path: "notification-sounds", element: <NotificationSounds /> },
           { path: "media-library", element: <AllMediaLibraryList /> },
           { path: "media-bin", element: <MediaBin /> },
