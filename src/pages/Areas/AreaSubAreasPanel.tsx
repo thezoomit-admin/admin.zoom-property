@@ -137,21 +137,35 @@ const AreaSubAreasPanel = ({
     {
       title: "Sub-area",
       key: "name",
-      render: (_: unknown, r: any) => (
-        <div className="flex items-center gap-3">
-          <AntImage
-            src={mediaSrc(r.image)}
-            alt={r.name}
-            className="size-10 rounded object-cover"
-          />
-          <div>
-            <div className="font-medium text-gray-900">{r.name}</div>
-            {r.nameBn ? (
-              <div className="text-xs text-gray-500">{r.nameBn}</div>
-            ) : null}
+      render: (_: unknown, r: any) => {
+        const imgUrl = mediaSrc(r.image);
+        return (
+          <div className="flex items-center gap-3">
+            {imgUrl ? (
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+                <AntImage
+                  src={imgUrl}
+                  alt={r.name}
+                  width="100%"
+                  height="100%"
+                  className="!h-full !w-full !object-cover"
+                  preview
+                />
+              </div>
+            ) : (
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 text-[10px] text-gray-400">
+                —
+              </div>
+            )}
+            <div className="min-w-0">
+              <div className="font-medium text-gray-900">{r.name}</div>
+              {r.nameBn ? (
+                <div className="text-xs text-gray-500">{r.nameBn}</div>
+              ) : null}
+            </div>
           </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       title: "Projects",
