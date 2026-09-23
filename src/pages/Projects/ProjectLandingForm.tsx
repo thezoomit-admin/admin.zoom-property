@@ -1046,7 +1046,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
           <Block
             sectionKey="amenities"
             title="Amenities (সুবিধা)"
-            hint="The amenity cards under the films."
+            hint="Maps link দিলেই location pin দেখাবে; না দিলে pin থাকবে না। Pin ক্লিক = প্রজেক্ট থেকে রুট।"
           >
                   <Pair en={["amenities", "eyebrow"]} bn={["amenities", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
                   <Pair en={["amenities", "title"]} bn={["amenities", "titleBn"]} label="Title" kind="title" />
@@ -1054,11 +1054,24 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
                   <ListEditor name={["amenities", "items"]} addLabel="Add amenity">
                     {(n, listPath) => (
                       <>
-                        <Pair pathPrefix={listPath} en={[n, "title"]} bn={[n, "titleBn"]} label="Title" kind="title" />
+                        <Pair pathPrefix={listPath} en={[n, "title"]} bn={[n, "titleBn"]} label="Title (place name)" kind="title" />
                         <Pair pathPrefix={listPath} en={[n, "body"]} bn={[n, "bodyBn"]} label="Body" rows={2} kind="body" />
                         <Form.Item name={[n, "icon"]} {...plainField("Icon", "icon")}>
                           <Input />
                         </Form.Item>
+                        <Form.Item
+                          name={[n, "mapUrl"]}
+                          {...plainField("Maps link (optional)", "url")}
+                        >
+                          <Input placeholder="Optional — paste Google Maps link" />
+                        </Form.Item>
+                        <Pair
+                          pathPrefix={listPath}
+                          en={[n, "distance"]}
+                          bn={[n, "distanceBn"]}
+                          label="Distance (optional)"
+                          kind="short"
+                        />
                       </>
                     )}
                   </ListEditor>
