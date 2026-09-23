@@ -24,6 +24,7 @@ import RichTextEditor from "../../components/Common/RichEditor/RichTextEditor";
 import UploadMedia from "../../components/shared/UploadMedia";
 import { useGetAgentsQuery } from "../../redux/features/agent/agentApi";
 import { useGetAreasQuery } from "../../redux/features/area/areaApi";
+import { useGetSubAreasQuery } from "../../redux/features/subArea/subAreaApi";
 import { normalizeUrl, urlRule } from "../../utils/normalizeUrl";
 import { mediaSrc } from "../../utils/mediaSrc";
 import {
@@ -59,6 +60,11 @@ const ProjectForm = ({
 
   const { data: areaData } = useGetAreasQuery({ limit: 300, activeOnly: true });
   const { data: agentData } = useGetAgentsQuery({ limit: 300 });
+  const selectedAreaId = Form.useWatch("area", form);
+  const { data: subAreaData } = useGetSubAreasQuery(
+    { area: selectedAreaId, limit: 200, activeOnly: true, sort: "order" },
+    { skip: !selectedAreaId },
+  );
 
   const handleTranslateDescription = async () => {
     const enText = form.getFieldValue("description");
@@ -83,6 +89,7 @@ const ProjectForm = ({
     form.setFieldsValue({
       ...initial,
       area: initial.area?._id ?? initial.area,
+      subArea: initial.subArea?._id ?? initial.subArea,
       agent: initial.agent?._id ?? initial.agent,
       coverImage: initial.coverImage?._id ?? initial.coverImage,
       coverImageUrl: mediaSrc(initial.coverImage),
@@ -203,6 +210,30 @@ const ProjectForm = ({
                       options={(areaData?.result || []).map((a: any) => ({
                         value: a._id,
                         label: a.name,
+                      }))}
+                      onChange={() => form.setFieldValue("subArea", undefined)}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={8}>
+                  <Form.Item
+                    label="Sub-area"
+                    name="subArea"
+                    tooltip="Optional pocket inside the area (shown after the lead form on the website)."
+                  >
+                    <Select
+                      allowClear
+                      showSearch
+                      optionFilterProp="label"
+                      placeholder={
+                        selectedAreaId
+                          ? "Select a sub-area"
+                          : "Pick an area first"
+                      }
+                      disabled={!selectedAreaId}
+                      options={(subAreaData?.result || []).map((s: any) => ({
+                        value: s._id,
+                        label: s.name,
                       }))}
                     />
                   </Form.Item>

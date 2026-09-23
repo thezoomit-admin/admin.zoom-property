@@ -7,9 +7,10 @@ import {
   useUpdateAreaMutation,
 } from "../../redux/features/area/areaApi";
 import AreaForm from "./AreaForm";
+import AreaSubAreasPanel from "./AreaSubAreasPanel";
 
 /**
- * Full page for editing an existing area.
+ * Full page for editing an existing area + its sub-areas.
  */
 const UpdateArea = () => {
   const { id = "" } = useParams();
@@ -36,13 +37,18 @@ const UpdateArea = () => {
   }
 
   return (
-    <AreaForm
-      heading={`Edit area: ${data?.name || ""}`}
-      submitLabel="Save changes"
-      initial={data}
-      saving={saving}
-      onSubmit={onSubmit}
-    />
+    <div className="space-y-2 pb-8">
+      <AreaForm
+        heading={`Edit area: ${data?.name || ""}`}
+        submitLabel="Save changes"
+        initial={data}
+        saving={saving}
+        onSubmit={onSubmit}
+      />
+      {id ? (
+        <AreaSubAreasPanel areaId={id} areaName={data?.name} />
+      ) : null}
+    </div>
   );
 };
 

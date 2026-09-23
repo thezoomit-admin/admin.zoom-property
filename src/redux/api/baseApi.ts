@@ -149,6 +149,7 @@ export const baseApi = createApi({
     "property-options",
     "projects",
     "areas",
+    "sub-areas",
     "blog",
     "blog-categories",
     "reviews",
