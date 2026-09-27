@@ -1,5 +1,5 @@
 import { Button, Card, Col, Form, Input, Row, Select, Space, Switch, Tabs, Tooltip } from "antd";
-import { ArrowLeft, ExternalLink, Languages, Loader2, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, Languages, Loader2, Play, Plus, Trash2, Video } from "lucide-react";
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { useNavigate } from "react-router-dom";
@@ -107,6 +107,7 @@ const IMG_SIZE = {
   about: "সাইজ: ১৮০০×১২০০ (৩:২)। মোবাইলে চেপে যাবে না (object-contain)।",
   residences: "সাইজ: ১৬০০×১২০০ (৪:৩) বা ২০০০×১২০০। ক্রপ ছাড়া পুরো দেখাবে।",
   elevation: "সাইজ: লম্বা ১২০০×১৮০০ (২:৩) বা চওড়া ২০০০×১৪০০। গ্যালারি থেকে আলাদা।",
+  films: "সাইজ: ১৯২০×১০৮০ (১৬:৯)। ঐচ্ছিক কভার/পোস্টার ইমেজ। না দিলে ইউটিউব থেকে অটো থাম্বনেইল দেখাবে।",
   gallery: "সাইজ: ১৯২০×১০৮০ (১৬:৯)। মেইন ভিউয়ার ১৬:৯ ক্রপ করে।",
   avatar: "সাইজ: ৪০০×৪০০ (১:১)। গোল সার্কেলে দেখায় — মুখ মাঝে রাখুন।",
 } as const;
@@ -571,6 +572,107 @@ function ListEditor({
   );
 }
 
+const extractYoutubeId = (url?: string) => {
+  if (!url) return null;
+  const match = String(url).match(
+    /(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|v=)([A-Za-z0-9_-]{6,})/,
+  );
+  return match?.[1] || null;
+};
+
+const FilmItemRow = ({
+  n,
+  listPath,
+  form,
+}: {
+  n: number;
+  listPath: (string | number)[];
+  form: any;
+}) => {
+  const url = Form.useWatch([...listPath, n, "url"], form);
+  const ytId = extractYoutubeId(url);
+  const ytThumb = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : "";
+
+  return (
+    <div className="space-y-3">
+      <Pair
+        pathPrefix={listPath}
+        en={[n, "title"]}
+        bn={[n, "titleBn"]}
+        label="Film Title"
+        kind="title"
+      />
+      <Pair
+        pathPrefix={listPath}
+        en={[n, "caption"]}
+        bn={[n, "captionBn"]}
+        label="Caption / Subtitle"
+        kind="caption"
+      />
+      <Row gutter={16}>
+        <Col xs={24} md={16}>
+          <Form.Item name={[n, "url"]} {...plainField("Video URL (YouTube or Facebook)", "url")}>
+            <Input
+              placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
+              onChange={(e) => {
+                const val = e.target.value;
+                if (/facebook\.com|fb\.watch|fb\.com/i.test(val)) {
+                  form.setFieldValue([...listPath, n, "provider"], "facebook");
+                } else if (/youtu\.be|youtube\.com/i.test(val)) {
+                  form.setFieldValue([...listPath, n, "provider"], "youtube");
+                }
+              }}
+            />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={8}>
+          <Form.Item name={[n, "provider"]} {...plainField("Platform", "short")}>
+            <Select
+              allowClear
+              placeholder="Auto / Select"
+              options={[
+                { value: "youtube", label: "YouTube Video / Reel" },
+                { value: "facebook", label: "Facebook Video / Reel" },
+              ]}
+            />
+          </Form.Item>
+        </Col>
+      </Row>
+
+      {/* Live YouTube Preview Card */}
+      {ytId ? (
+        <div className="mb-3 flex items-center gap-3 rounded-lg border border-red-200 bg-red-50/70 p-2.5">
+          <div className="relative aspect-video w-32 shrink-0 overflow-hidden rounded-md bg-black shadow-xs">
+            <img
+              src={ytThumb}
+              alt="YouTube Preview"
+              className="size-full object-cover"
+            />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+              <span className="flex size-6 items-center justify-center rounded-full bg-red-600 text-white shadow">
+                <Play className="size-3 fill-white translate-x-0.2" />
+              </span>
+            </div>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="rounded bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white tracking-wider">
+                YouTube Video Connected
+              </span>
+              <span className="text-xs font-mono text-secondary-600 font-medium">
+                ID: {ytId}
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-secondary-600">
+              YouTube thumbnail এবং ভিডিও সরাসরি YouTube থেকে লোড ও প্লে হবে।
+            </p>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
 function Block({
   title,
   hint,
@@ -641,6 +743,8 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
     }));
     const films = (landing.films?.items || []).map((item: any) => ({
       ...item,
+      poster: mediaId(item.poster),
+      posterUrl: mediaPreview(item.poster),
     }));
     const shots = (landing.gallery?.shots || []).map((shot: any) => ({
       ...shot,
@@ -1095,22 +1199,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
                   <Pair en={["films", "play"]} bn={["films", "playBn"]} label="Play label" kind="uiLabel" />
                   <ListEditor name={["films", "items"]} addLabel="Add film">
                     {(n, listPath) => (
-                      <>
-                        <Pair pathPrefix={listPath} en={[n, "title"]} bn={[n, "titleBn"]} label="Title" kind="title" />
-                        <Pair pathPrefix={listPath} en={[n, "caption"]} bn={[n, "captionBn"]} label="Caption" kind="caption" />
-                        <Form.Item name={[n, "url"]} {...plainField("Video URL", "url")}>
-                          <Input placeholder="Facebook or YouTube URL" />
-                        </Form.Item>
-                        <Form.Item name={[n, "provider"]} {...plainField("Provider", "short")}>
-                          <Select
-                            allowClear
-                            options={[
-                              { value: "facebook", label: "Facebook" },
-                              { value: "youtube", label: "YouTube" },
-                            ]}
-                          />
-                        </Form.Item>
-                      </>
+                      <FilmItemRow n={n} listPath={listPath} form={form} />
                     )}
                   </ListEditor>
           </Block>
