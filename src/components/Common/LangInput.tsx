@@ -129,7 +129,7 @@ function inferCounterpartField(
  * Still blocks Latin A–Z so EN copy does not sneak into BN fields.
  */
 export const BANGLA_REGEX =
-  /^[\u0980-\u09FF\u0964\u0965\u200C\u200D\s0-9.,!()"'\-/:;?%&+*=#@~^\[\]{}·•…“”‘’—–−]*$/;
+  /^[\u0980-\u09FF\u0964\u0965\u200C\u200D\s0-9.,!()"'\-/:;?%&+*=#@~^[\]{}·•…“”‘’—–−]*$/;
 export const ENGLISH_ONLY_REGEX = /^[^\u0980-\u09FF]*$/;
 
 export const BANGLA_RULE = {

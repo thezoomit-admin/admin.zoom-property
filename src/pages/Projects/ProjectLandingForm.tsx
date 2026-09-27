@@ -1,5 +1,5 @@
 import { Button, Card, Col, Form, Input, Row, Select, Space, Switch, Tabs, Tooltip } from "antd";
-import { ArrowLeft, ExternalLink, Languages, Loader2, Play, Plus, Trash2, Video } from "lucide-react";
+import { ArrowLeft, ExternalLink, Languages, Loader2, Play, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { useNavigate } from "react-router-dom";

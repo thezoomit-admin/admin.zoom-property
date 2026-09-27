@@ -6,6 +6,7 @@ import {
   useGetProjectLandingQuery,
   useSaveProjectLandingSectionMutation,
 } from "../../redux/features/project/projectApi";
+import { revalidateFrontend } from "../../utils/revalidateFrontend";
 import ProjectLandingForm from "./ProjectLandingForm";
 
 const ProjectLandingPage = () => {
@@ -22,6 +23,8 @@ const ProjectLandingPage = () => {
     values: Record<string, unknown>,
   ) => {
     await saveSection({ id, section, data: values }).unwrap();
+    // Bust the frontend Next.js cache so show/hide changes are immediate
+    revalidateFrontend("projects");
   };
 
   if (isLoading || (isFetching && !data)) {

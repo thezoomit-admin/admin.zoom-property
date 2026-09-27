@@ -21,6 +21,7 @@ interface UploadImageProps {
 }
 
 /** Holds Form values without coercing arrays through <Input>. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ValueHolder = ({ value: _value }: { value?: unknown; onChange?: (v: unknown) => void }) =>
   null;
 
