@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
-import { translateToBanglaApi } from "../../components/Common/LangInput";
+import { translateToBanglaApi, translateToEnglishApi } from "../../components/Common/LangInput";
 import PageHeader from "../../components/Common/PageHeader";
 import PageMeta from "../../components/Common/PageMeta";
 import PermissionGate from "../../components/Common/PermissionGate";
@@ -120,7 +120,7 @@ const SectionForm = ({
   stored: Record<string, CmsContentDoc>;
 }) => {
   const [form] = Form.useForm();
-  const [translatingAll, setTranslatingAll] = useState(false);
+  const [translatingDirection, setTranslatingDirection] = useState<"bn" | "en" | null>(null);
   const [save, { isLoading: saving }] = useSaveCmsContentMutation();
   const [reset, { isLoading: resetting }] = useResetCmsContentMutation();
 
@@ -290,8 +290,8 @@ const SectionForm = ({
     toast.success(`ফর্মে ${count}টি ফিল্ডে ডিফল্ট ডেটা লোড হয়েছে। Save section-এ ক্লিক করে সেভ করুন।`);
   };
 
-  const onTranslateAll = async () => {
-    setTranslatingAll(true);
+  const onTranslateAllEnToBn = async () => {
+    setTranslatingDirection("bn");
     let count = 0;
     try {
       for (const field of allEffectiveFields) {
@@ -313,7 +313,34 @@ const SectionForm = ({
     } catch {
       toast.error("অনুবাদ করতে সমস্যা হয়েছে");
     } finally {
-      setTranslatingAll(false);
+      setTranslatingDirection(null);
+    }
+  };
+
+  const onTranslateAllBnToEn = async () => {
+    setTranslatingDirection("en");
+    let count = 0;
+    try {
+      for (const field of allEffectiveFields) {
+        if (field.type === "image" || field.type === "url" || field.type === "images" || field.type === "icon") continue;
+        const bnVal = (form.getFieldValue(`${field.key}|bn`) || field.bn || "").trim();
+        if (bnVal) {
+          const enText = await translateToEnglishApi(bnVal);
+          if (enText) {
+            form.setFieldValue(`${field.key}|en`, enText);
+            count++;
+          }
+        }
+      }
+      if (count > 0) {
+        toast.success(`সেকশনের ${count}টি ফিল্ড ইংরেজিতে অনুবাদ করা হয়েছে`);
+      } else {
+        toast.info("অনুবাদ করার মতো কোনো বাংলা টেক্সট পাওয়া যায়নি");
+      }
+    } catch {
+      toast.error("অনুবাদ করতে সমস্যা হয়েছে");
+    } finally {
+      setTranslatingDirection(null);
     }
   };
 
@@ -466,14 +493,24 @@ const SectionForm = ({
               ডিফল্ট ডেটা লোড করুন
             </Button>
           </Tooltip>
-          <Tooltip title="Translate all English fields in this section to Bangla">
+          <Tooltip title="Translate all English fields in this section to Bangla (EN → BN)">
             <Button
-              icon={<Languages className="h-4 w-4 text-primary-600" />}
-              loading={translatingAll}
-              onClick={onTranslateAll}
-              className="text-primary-700 border-primary-200 hover:bg-primary-50"
+              icon={<Languages className="h-4 w-4 text-emerald-600" />}
+              loading={translatingDirection === "bn"}
+              onClick={onTranslateAllEnToBn}
+              className="text-emerald-700 border-emerald-300 hover:bg-emerald-50"
             >
               সবগুলো বাংলা করুন
+            </Button>
+          </Tooltip>
+          <Tooltip title="Translate all Bangla fields in this section to English (BN → EN)">
+            <Button
+              icon={<Languages className="h-4 w-4 text-blue-600" />}
+              loading={translatingDirection === "en"}
+              onClick={onTranslateAllBnToEn}
+              className="text-blue-700 border-blue-300 hover:bg-blue-50"
+            >
+              সবগুলো English করুন
             </Button>
           </Tooltip>
           <PermissionGate module="Dynamic Content" action="Delete">

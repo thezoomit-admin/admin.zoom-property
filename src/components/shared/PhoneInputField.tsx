@@ -9,6 +9,7 @@ import "react-phone-number-input/style.css";
 const DEFAULT_COUNTRY: Country = "BD";
 
 /** Turn stored local BD numbers (017…) into E.164 for the picker. */
+// eslint-disable-next-line react-refresh/only-export-components
 export function toPhoneValue(raw?: string | null): Value | undefined {
   const text = String(raw || "").trim();
   if (!text) return undefined;

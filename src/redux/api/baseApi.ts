@@ -152,6 +152,7 @@ export const baseApi = createApi({
     "sub-areas",
     "blog",
     "blog-categories",
+    "blog-comments",
     "reviews",
     /* Media. */
     "media",

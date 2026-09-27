@@ -82,16 +82,24 @@ const AreaForm = ({
     }
   };
 
+  const [submitting, setSubmitting] = useState(false);
+  const isSaving = saving || submitting;
+
   const onFinish = async (values: any) => {
-    const { imageUrl, ...rest } = values;
-    void imageUrl;
-    if (rest.medianPrice !== undefined && rest.medianPrice !== null) {
-      rest.medianPrice = Number(rest.medianPrice) || 0;
+    setSubmitting(true);
+    try {
+      const { imageUrl, ...rest } = values;
+      void imageUrl;
+      if (rest.medianPrice !== undefined && rest.medianPrice !== null) {
+        rest.medianPrice = Number(rest.medianPrice) || 0;
+      }
+      if (rest.pricePerSqft !== undefined && rest.pricePerSqft !== null) {
+        rest.pricePerSqft = Number(rest.pricePerSqft) || 0;
+      }
+      await onSubmit(rest);
+    } finally {
+      setSubmitting(false);
     }
-    if (rest.pricePerSqft !== undefined && rest.pricePerSqft !== null) {
-      rest.pricePerSqft = Number(rest.pricePerSqft) || 0;
-    }
-    await onSubmit(rest);
   };
 
   return (
@@ -411,9 +419,17 @@ const AreaForm = ({
 
         {/* Actions Bottom Bar */}
         <div className="flex items-center justify-end gap-3 sticky bottom-4 z-10 bg-white/95 backdrop-blur-md p-4 rounded-lg border border-gray-300 shadow-md">
-          <Button onClick={() => navigate("/areas")}>Cancel</Button>
-          <Button type="primary" htmlType="submit" loading={saving} size="large">
-            {submitLabel}
+          <Button onClick={() => navigate("/areas")} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={isSaving}
+            disabled={isSaving}
+            size="large"
+          >
+            {isSaving ? "Saving..." : submitLabel}
           </Button>
         </div>
       </Form>

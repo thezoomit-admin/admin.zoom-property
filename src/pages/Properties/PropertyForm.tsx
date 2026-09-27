@@ -112,20 +112,28 @@ const PropertyForm = ({
     });
   }, [initial, form]);
 
+  const [submitting, setSubmitting] = useState(false);
+  const isSaving = saving || submitting;
+
   const handleFinish = async (values: any) => {
-    const { coverImageUrl, imageUrls, ...rest } = values;
-    void coverImageUrl;
-    void imageUrls;
-    await onSubmit({
-      purpose: "sale",
-      ...rest,
-      virtualTourUrl: normalizeUrl(values.virtualTourUrl),
-      videoUrl: normalizeUrl(values.videoUrl),
-      mapUrl: normalizeUrl(values.mapUrl),
-      description: toDescriptionArray(values.description),
-      descriptionBn: toDescriptionArray(values.descriptionBn),
-      expiresAt: values.expiresAt ? values.expiresAt.toISOString() : null,
-    });
+    setSubmitting(true);
+    try {
+      const { coverImageUrl, imageUrls, ...rest } = values;
+      void coverImageUrl;
+      void imageUrls;
+      await onSubmit({
+        purpose: "sale",
+        ...rest,
+        virtualTourUrl: normalizeUrl(values.virtualTourUrl),
+        videoUrl: normalizeUrl(values.videoUrl),
+        mapUrl: normalizeUrl(values.mapUrl),
+        description: toDescriptionArray(values.description),
+        descriptionBn: toDescriptionArray(values.descriptionBn),
+        expiresAt: values.expiresAt ? values.expiresAt.toISOString() : null,
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -583,9 +591,17 @@ const PropertyForm = ({
 
         {/* Actions Bottom Bar */}
         <div className="flex items-center justify-end gap-3 sticky bottom-4 z-10 bg-white/95 backdrop-blur-md p-4 rounded-lg border border-gray-300 shadow-md">
-          <Button onClick={() => navigate("/properties")}>Cancel</Button>
-          <Button type="primary" htmlType="submit" loading={saving} size="large">
-            {submitLabel}
+          <Button onClick={() => navigate("/properties")} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={isSaving}
+            disabled={isSaving}
+            size="large"
+          >
+            {isSaving ? "Saving..." : submitLabel}
           </Button>
         </div>
       </Form>
