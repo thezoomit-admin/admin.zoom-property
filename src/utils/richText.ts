@@ -1,4 +1,7 @@
-import { translateToBanglaApi } from "../components/Common/LangInput";
+import {
+  translateToBanglaApi,
+  translateToEnglishApi,
+} from "../components/Common/LangInput";
 
 /**
  * The description field, in both directions.
@@ -29,10 +32,10 @@ export const toDescriptionArray = (value?: string) => {
 };
 
 /**
- * Walks the tree translating text nodes only, so the markup the editor
+ * Walks the tree translating text nodes to Bangla, so the markup the editor
  * produced survives the trip.
  */
-const translateNodeText = async (node: Node) => {
+const translateNodeTextToBangla = async (node: Node) => {
   if (node.nodeType === Node.TEXT_NODE) {
     const text = node.textContent?.trim();
     if (text) {
@@ -41,7 +44,24 @@ const translateNodeText = async (node: Node) => {
     }
   } else if (node.nodeType === Node.ELEMENT_NODE) {
     for (const child of Array.from(node.childNodes)) {
-      await translateNodeText(child);
+      await translateNodeTextToBangla(child);
+    }
+  }
+};
+
+/**
+ * Walks the tree translating text nodes to English.
+ */
+const translateNodeTextToEnglish = async (node: Node) => {
+  if (node.nodeType === Node.TEXT_NODE) {
+    const text = node.textContent?.trim();
+    if (text) {
+      const translated = await translateToEnglishApi(text);
+      node.textContent = translated;
+    }
+  } else if (node.nodeType === Node.ELEMENT_NODE) {
+    for (const child of Array.from(node.childNodes)) {
+      await translateNodeTextToEnglish(child);
     }
   }
 };
@@ -53,8 +73,19 @@ export const translateRichTextToBangla = async (
   if (!html || !html.trim()) return "";
   const tempDiv = document.createElement("div");
   tempDiv.innerHTML = html;
-  await translateNodeText(tempDiv);
+  await translateNodeTextToBangla(tempDiv);
   return tempDiv.innerHTML || (await translateToBanglaApi(html));
+};
+
+/** Translates rich text to English, keeping the formatting intact. */
+export const translateRichTextToEnglish = async (
+  html: string
+): Promise<string> => {
+  if (!html || !html.trim()) return "";
+  const tempDiv = document.createElement("div");
+  tempDiv.innerHTML = html;
+  await translateNodeTextToEnglish(tempDiv);
+  return tempDiv.innerHTML || (await translateToEnglishApi(html));
 };
 
 /** True when the editor holds nothing a translator could work with. */
