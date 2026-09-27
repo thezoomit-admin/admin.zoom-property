@@ -7,6 +7,7 @@ export function landingHref(path?: string | null) {
     .toLowerCase();
   if (!clean) return "";
   if (clean === "zoomalzahara") return "/zoomalzahara";
+  if (clean === "project-landing") return "/project-landing";
   return `/p/${clean}`;
 }
 
