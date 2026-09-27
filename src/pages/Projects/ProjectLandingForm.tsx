@@ -940,20 +940,8 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
           <Block
             sectionKey="hero"
             title="Hero (হিরো)"
-            hint="First screen. Upload multiple hero images — they crossfade like the home page slider."
+            hint="First screen. Set badges, title, lead story, buttons, stats, and background slider images."
           >
-                  <Form.Item
-                    label="Hero images (slider)"
-                    tooltip={imageTooltip(IMG_SIZE.hero)}
-                  >
-                    <UploadMedia
-                      form={form}
-                      fieldPath={["hero", "imageUrls"] as any}
-                      idFieldPath={["hero", "images"]}
-                      mode="multiple"
-                      type="image"
-                    />
-                  </Form.Item>
                   <Pair en={["hero", "badge"]} bn={["hero", "badgeBn"]} label="Badge" kind="badge" />
                   <Pair en={["hero", "handover"]} bn={["hero", "handoverBn"]} label="Handover badge" kind="badge" />
                   <Pair en={["hero", "eyebrow"]} bn={["hero", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
@@ -962,7 +950,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
                   <Pair en={["hero", "location"]} bn={["hero", "locationBn"]} label="Location" kind="short" />
                   <Pair en={["hero", "ctaPrimary"]} bn={["hero", "ctaPrimaryBn"]} label="Primary CTA" kind="cta" />
                   <Pair en={["hero", "ctaSecondary"]} bn={["hero", "ctaSecondaryBn"]} label="Secondary CTA" kind="cta" />
-                  <p className="mb-2 text-sm font-medium">Stats</p>
+                  <p className="mb-2 text-sm font-medium">Stats & Metrics</p>
                   <ListEditor name={["hero", "stats"]} addLabel="Add stat">
                     {(n, listPath) => (
                       <>
@@ -974,6 +962,20 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
                       </>
                     )}
                   </ListEditor>
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <Form.Item
+                      label="Hero background images (slider)"
+                      tooltip={imageTooltip(IMG_SIZE.hero)}
+                    >
+                      <UploadMedia
+                        form={form}
+                        fieldPath={["hero", "imageUrls"] as any}
+                        idFieldPath={["hero", "images"]}
+                        mode="multiple"
+                        type="image"
+                      />
+                    </Form.Item>
+                  </div>
           </Block>
           </div>
 
@@ -983,12 +985,14 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
             title="About (প্রকল্প)"
             hint="The project story, the side photo and the points beside it."
           >
-                  <Form.Item label="Side image" tooltip={imageTooltip(IMG_SIZE.about)}>
-                    <UploadMedia form={form} fieldPath={["about", "imageUrl"] as any} idFieldPath={["about", "image"]} type="image" />
-                  </Form.Item>
                   <Pair en={["about", "eyebrow"]} bn={["about", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
                   <Pair en={["about", "title"]} bn={["about", "titleBn"]} label="Title" kind="title" />
                   <Pair en={["about", "body"]} bn={["about", "bodyBn"]} label="Body" rows={4} kind="body" />
+                  <div className="my-3">
+                    <Form.Item label="Side / Feature image" tooltip={imageTooltip(IMG_SIZE.about)}>
+                      <UploadMedia form={form} fieldPath={["about", "imageUrl"] as any} idFieldPath={["about", "image"]} type="image" />
+                    </Form.Item>
+                  </div>
                   <ListEditor name={["about", "points"]} addLabel="Add point">
                     {(n, listPath) => (
                       <>
@@ -1007,35 +1011,53 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
           <Block
             sectionKey="residences"
             title="Residences (ফ্ল্যাট)"
-            hint="Flat photos, the featured unit and its highlights."
+            hint="Flat section title, featured unit info, specifications, highlights, and interior gallery photos."
           >
-                  <Form.Item label="Residence images" tooltip={imageTooltip(IMG_SIZE.residences)}>
-                    <UploadMedia form={form} fieldPath={["residences", "imageUrls"] as any} idFieldPath={["residences", "images"]} mode="multiple" type="image" />
-                  </Form.Item>
                   <Pair en={["residences", "eyebrow"]} bn={["residences", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
                   <Pair en={["residences", "title"]} bn={["residences", "titleBn"]} label="Title" kind="title" />
                   <Pair en={["residences", "description"]} bn={["residences", "descriptionBn"]} label="Description" rows={3} kind="description" />
-                  <Pair en={["residences", "featured"]} bn={["residences", "featuredBn"]} label="Featured badge" kind="badge" />
-                  <Pair en={["residences", "cta"]} bn={["residences", "ctaBn"]} label="CTA" kind="cta" />
-                  <Pair en={["residences", "preview"]} bn={["residences", "previewBn"]} label="Preview label" kind="uiLabel" />
-                  <Pair en={["residences", "close"]} bn={["residences", "closeBn"]} label="Close label" kind="uiLabel" />
-                  <Pair en={["residences", "unit", "name"]} bn={["residences", "unit", "nameBn"]} label="Unit name" kind="short" />
-                  <Pair en={["residences", "unit", "beds"]} bn={["residences", "unit", "bedsBn"]} label="Beds" kind="unitSpec" />
-                  <Pair en={["residences", "unit", "baths"]} bn={["residences", "unit", "bathsBn"]} label="Baths" kind="unitSpec" />
-                  <Pair en={["residences", "unit", "size"]} bn={["residences", "unit", "sizeBn"]} label="Size" kind="unitSpec" />
-                  <Pair en={["residences", "unit", "price"]} bn={["residences", "unit", "priceBn"]} label="Price note" kind="price" />
-                  <Pair en={["residences", "unit", "note"]} bn={["residences", "unit", "noteBn"]} label="Note" rows={2} kind="note" />
+                  
+                  <div className="my-4 rounded-lg border border-gray-200 bg-gray-50/50 p-4">
+                    <h4 className="font-heading text-sm font-semibold text-secondary-800 mb-3">Featured Unit Specifications (মডেল ফ্ল্যাট বিবরণ)</h4>
+                    <Pair en={["residences", "unit", "name"]} bn={["residences", "unit", "nameBn"]} label="Unit name" kind="short" />
+                    <Pair en={["residences", "featured"]} bn={["residences", "featuredBn"]} label="Featured badge" kind="badge" />
+                    <Pair en={["residences", "unit", "note"]} bn={["residences", "unit", "noteBn"]} label="Layout / features note" rows={2} kind="note" />
+                    <Pair en={["residences", "unit", "price"]} bn={["residences", "unit", "priceBn"]} label="Price note" kind="price" />
+                    <Pair en={["residences", "cta"]} bn={["residences", "ctaBn"]} label="CTA button" kind="cta" />
+                    <Row gutter={12}>
+                      <Col xs={24} md={8}>
+                        <Pair en={["residences", "unit", "beds"]} bn={["residences", "unit", "bedsBn"]} label="Beds" kind="unitSpec" />
+                      </Col>
+                      <Col xs={24} md={8}>
+                        <Pair en={["residences", "unit", "baths"]} bn={["residences", "unit", "bathsBn"]} label="Baths" kind="unitSpec" />
+                      </Col>
+                      <Col xs={24} md={8}>
+                        <Pair en={["residences", "unit", "size"]} bn={["residences", "unit", "sizeBn"]} label="Size" kind="unitSpec" />
+                      </Col>
+                    </Row>
+                  </div>
+
+                  <p className="mb-2 text-sm font-medium">Unit Highlights & Amenities</p>
                   <ListEditor name={["residences", "highlights"]} addLabel="Add highlight">
                     {(n, listPath) => (
                       <>
                         <Pair pathPrefix={listPath} en={[n, "label"]} bn={[n, "labelBn"]} label="Label" kind="short" />
                         <Pair pathPrefix={listPath} en={[n, "value"]} bn={[n, "valueBn"]} label="Value" kind="short" />
                         <Form.Item name={[n, "icon"]} {...plainField("Icon", "icon")}>
-                          <Input />
+                          <Input placeholder="fa-solid fa-gem" />
                         </Form.Item>
                       </>
                     )}
                   </ListEditor>
+
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <Form.Item label="Residence / Interior images" tooltip={imageTooltip(IMG_SIZE.residences)}>
+                      <UploadMedia form={form} fieldPath={["residences", "imageUrls"] as any} idFieldPath={["residences", "images"]} mode="multiple" type="image" />
+                    </Form.Item>
+                  </div>
+
+                  <Pair en={["residences", "preview"]} bn={["residences", "previewBn"]} label="Preview label" kind="uiLabel" />
+                  <Pair en={["residences", "close"]} bn={["residences", "closeBn"]} label="Close label" kind="uiLabel" />
           </Block>
           </div>
 
