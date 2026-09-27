@@ -70,13 +70,18 @@ const PropertyTypes = () => {
   const [limit, setLimit] = useState(10);
   const iconValue = Form.useWatch("icon", form);
 
-  const { data: optionResult = { rows: [], meta: {} }, isFetching } = useGetPropertyOptionsQuery({
+  const { data: optionResult, isFetching } = useGetPropertyOptionsQuery({
     kind: "types",
     page,
     limit,
     searchTerm: search,
   });
-  const { rows, meta } = optionResult;
+  const rows = Array.isArray(optionResult)
+    ? optionResult
+    : (optionResult as any)?.rows ?? (optionResult as any)?.data ?? [];
+  const meta = Array.isArray(optionResult)
+    ? { total: optionResult.length }
+    : (optionResult as any)?.meta ?? {};
 
   const [createOption, { isLoading: creating }] =
     useCreatePropertyOptionMutation();

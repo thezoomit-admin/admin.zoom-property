@@ -30,7 +30,7 @@ const Agents = () => {
   });
   const [deleteAgent] = useDeleteAgentMutation();
 
-  const rows = data?.data ?? [];
+  const rows = (data as any)?.result ?? (data as any)?.data ?? [];
   const total = data?.meta?.total ?? 0;
 
   const onDelete = (id: string, name: string) =>
@@ -137,7 +137,7 @@ const Agents = () => {
   return (
     <div>
       <PageMeta title="Agents | Zoom Property" />
-      <PageHeader title="Agents" breadcrumbs={[{ name: "HR", path: "/employees" }, { name: "Agents" }]} />
+      <PageHeader title="Agents" breadcrumbs={[{ title: "HR", path: "/employees" }, { title: "Agents" }]} />
 
       <PermissionGate module="Agents" action="Read">
         <div className="mt-6 rounded-lg border border-secondary-200 bg-white">
@@ -170,7 +170,7 @@ const Agents = () => {
               total,
               current: page,
               pageSize: limit,
-              onChange: (p, s) => {
+              onChange: (p: number, s: number) => {
                 setPage(p);
                 setLimit(s);
               },
