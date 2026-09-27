@@ -86,14 +86,19 @@ const BlogForm = ({ initial, saving, onSubmit, heading, submitLabel }: Props) =>
     }
   };
 
+  const [submitting, setSubmitting] = useState(false);
+  const isSaving = saving || submitting;
+
   const handleFinish = async (values: any) => {
-    // The byline is not in this form. The API takes it from whoever is signed
-    // in, and records it as a copy — so an article keeps the name and the
-    // photograph of the person who wrote it, whatever happens to them later.
-    const { coverImageUrl, thumbnailUrl, ...rest } = values;
-    void coverImageUrl;
-    void thumbnailUrl;
-    await onSubmit(rest);
+    setSubmitting(true);
+    try {
+      const { coverImageUrl, thumbnailUrl, ...rest } = values;
+      void coverImageUrl;
+      void thumbnailUrl;
+      await onSubmit(rest);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -369,10 +374,19 @@ const BlogForm = ({ initial, saving, onSubmit, heading, submitLabel }: Props) =>
           </Row>
         </Card>
 
-        <div className="flex justify-end gap-2 pb-6">
-          <Button onClick={() => navigate("/blog")}>Cancel</Button>
-          <Button type="primary" htmlType="submit" loading={saving}>
-            {submitLabel}
+        {/* Actions Bottom Bar */}
+        <div className="flex items-center justify-end gap-3 sticky bottom-4 z-10 bg-white/95 backdrop-blur-md p-4 rounded-lg border border-gray-300 shadow-md">
+          <Button onClick={() => navigate("/blog")} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={isSaving}
+            disabled={isSaving}
+            size="large"
+          >
+            {isSaving ? "Saving..." : submitLabel}
           </Button>
         </div>
       </Form>
