@@ -1,4 +1,4 @@
-import { config } from "../../config";
+import { config } from "../config";
 
 /**
  * Fire-and-forget: tell the Next.js frontend to drop its cached data for
