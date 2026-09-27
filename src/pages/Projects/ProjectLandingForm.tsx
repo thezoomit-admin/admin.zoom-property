@@ -1024,17 +1024,9 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
                     <Pair en={["residences", "unit", "note"]} bn={["residences", "unit", "noteBn"]} label="Layout / features note" rows={2} kind="note" />
                     <Pair en={["residences", "unit", "price"]} bn={["residences", "unit", "priceBn"]} label="Price note" kind="price" />
                     <Pair en={["residences", "cta"]} bn={["residences", "ctaBn"]} label="CTA button" kind="cta" />
-                    <Row gutter={12}>
-                      <Col xs={24} md={8}>
-                        <Pair en={["residences", "unit", "beds"]} bn={["residences", "unit", "bedsBn"]} label="Beds" kind="unitSpec" />
-                      </Col>
-                      <Col xs={24} md={8}>
-                        <Pair en={["residences", "unit", "baths"]} bn={["residences", "unit", "bathsBn"]} label="Baths" kind="unitSpec" />
-                      </Col>
-                      <Col xs={24} md={8}>
-                        <Pair en={["residences", "unit", "size"]} bn={["residences", "unit", "sizeBn"]} label="Size" kind="unitSpec" />
-                      </Col>
-                    </Row>
+                    <Pair en={["residences", "unit", "beds"]} bn={["residences", "unit", "bedsBn"]} label="Beds" kind="unitSpec" />
+                    <Pair en={["residences", "unit", "baths"]} bn={["residences", "unit", "bathsBn"]} label="Baths" kind="unitSpec" />
+                    <Pair en={["residences", "unit", "size"]} bn={["residences", "unit", "sizeBn"]} label="Size" kind="unitSpec" />
                   </div>
 
                   <p className="mb-2 text-sm font-medium">Unit Highlights & Amenities</p>
@@ -1246,14 +1238,8 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
                   <Pair en={["cta", "title"]} bn={["cta", "titleBn"]} label="Title" kind="title" />
                   <Pair en={["cta", "description"]} bn={["cta", "descriptionBn"]} label="Description" rows={3} kind="description" />
                   <Pair en={["cta", "primary"]} bn={["cta", "primaryBn"]} label="Primary button" kind="cta" />
-                  <Row gutter={12}>
-                    <Col xs={24} md={12}>
-                      <Pair en={["cta", "call"]} bn={["cta", "callBn"]} label="Call button" kind="cta" />
-                    </Col>
-                    <Col xs={24} md={12}>
-                      <Pair en={["cta", "whatsapp"]} bn={["cta", "whatsappBn"]} label="WhatsApp button" kind="cta" />
-                    </Col>
-                  </Row>
+                  <Pair en={["cta", "call"]} bn={["cta", "callBn"]} label="Call button" kind="cta" />
+                  <Pair en={["cta", "whatsapp"]} bn={["cta", "whatsappBn"]} label="WhatsApp button" kind="cta" />
           </Block>
           </div>
 
@@ -1320,14 +1306,8 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
                   <Pair en={["enquire", "eyebrow"]} bn={["enquire", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
                   <Pair en={["enquire", "title"]} bn={["enquire", "titleBn"]} label="Title" kind="title" />
                   <Pair en={["enquire", "description"]} bn={["enquire", "descriptionBn"]} label="Description" rows={3} kind="description" />
-                  <Row gutter={12}>
-                    <Col xs={24} md={12}>
-                      <Pair en={["enquire", "phoneLabel"]} bn={["enquire", "phoneLabelBn"]} label="Phone label" kind="uiLabel" />
-                    </Col>
-                    <Col xs={24} md={12}>
-                      <Pair en={["enquire", "whatsappLabel"]} bn={["enquire", "whatsappLabelBn"]} label="WhatsApp label" kind="uiLabel" />
-                    </Col>
-                  </Row>
+                  <Pair en={["enquire", "phoneLabel"]} bn={["enquire", "phoneLabelBn"]} label="Phone label" kind="uiLabel" />
+                  <Pair en={["enquire", "whatsappLabel"]} bn={["enquire", "whatsappLabelBn"]} label="WhatsApp label" kind="uiLabel" />
                   <div className="my-4 rounded-lg border border-gray-200 bg-gray-50/50 p-4">
                     <h4 className="font-heading text-sm font-semibold text-secondary-800 mb-3">Lead Form Fields & Copy (লিড ফর্মের ফিল্ডসমূহ)</h4>
                     <Form.Item name={["enquire", "source"]} {...plainField("Lead source", "short")}>
