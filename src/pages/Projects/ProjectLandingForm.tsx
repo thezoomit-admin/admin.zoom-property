@@ -1046,14 +1046,10 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
             title="Hero (হিরো)"
             hint="First screen. Set badges, title, lead story, buttons, stats, and background slider images."
           >
-                  <Pair en={["hero", "badge"]} bn={["hero", "badgeBn"]} label="Badge" kind="badge" />
-                  <Pair en={["hero", "handover"]} bn={["hero", "handoverBn"]} label="Handover badge" kind="badge" />
-                  <Pair en={["hero", "eyebrow"]} bn={["hero", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
                   <Pair en={["hero", "title"]} bn={["hero", "titleBn"]} label="Title" kind="heroTitle" />
                   <Pair en={["hero", "lead"]} bn={["hero", "leadBn"]} label="Lead" rows={3} kind="lead" />
                   <Pair en={["hero", "location"]} bn={["hero", "locationBn"]} label="Location" kind="short" />
                   <Pair en={["hero", "ctaPrimary"]} bn={["hero", "ctaPrimaryBn"]} label="Primary CTA" kind="cta" />
-                  <Pair en={["hero", "ctaSecondary"]} bn={["hero", "ctaSecondaryBn"]} label="Secondary CTA" kind="cta" />
                   <p className="mb-2 text-sm font-medium">Stats & Metrics</p>
                   <ListEditor name={["hero", "stats"]} addLabel="Add stat">
                     {(n, listPath) => (
