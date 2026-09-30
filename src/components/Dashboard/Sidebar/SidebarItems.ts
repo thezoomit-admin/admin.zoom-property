@@ -216,7 +216,7 @@ const sidebarMenuRoutes: RouteItem[] = [
         icon: UserRound,
       },
       {
-        label: "Agents",
+        label: "Team Members",
         address: "/employees/agents",
         module: "Agents",
         icon: UserRound,
