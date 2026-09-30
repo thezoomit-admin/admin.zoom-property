@@ -1,4 +1,4 @@
-import { Button, Modal, Space, Tooltip } from "antd";
+import { Button, Modal, Space, Tag, Tooltip } from "antd";
 import { Edit, Plus, Search, Trash2, UserRound } from "lucide-react";
 import { useState } from "react";
 import { toast } from "react-toastify";
@@ -35,23 +35,23 @@ const Agents = () => {
 
   const onDelete = (id: string, name: string) =>
     confirm({
-      title: "Delete this agent?",
+      title: "Delete this team member?",
       content: `"${name}" will be removed.`,
       okText: "Yes, delete",
       okType: "danger",
       onOk: async () => {
         try {
           await deleteAgent(id).unwrap();
-          toast.success("Agent deleted");
+          toast.success("Team member deleted");
         } catch (e: any) {
-          toast.error(e?.data?.message || "Could not delete the agent");
+          toast.error(e?.data?.message || "Could not delete the team member");
         }
       },
     });
 
   const columns = [
     {
-      title: "Agent",
+      title: "Team Member",
       dataIndex: "name",
       key: "name",
       width: 300,
@@ -70,32 +70,23 @@ const Agents = () => {
           </div>
           <div className="min-w-0">
             <p className="truncate font-medium text-secondary-800">{name}</p>
-            <p className="truncate text-xs text-secondary-500">{r.role}</p>
+            <p className="truncate text-xs text-secondary-500">{r.phone}</p>
           </div>
         </div>
       ),
     },
     {
-      title: "Deals",
-      dataIndex: "deals",
-      key: "deals",
+      title: "Status",
+      dataIndex: "isActive",
+      key: "isActive",
       width: 100,
       align: "center" as const,
-    },
-    {
-      title: "Rating",
-      dataIndex: "rating",
-      key: "rating",
-      width: 100,
-      align: "center" as const,
-    },
-    {
-      title: "Reply Time",
-      dataIndex: "respondsIn",
-      key: "respondsIn",
-      width: 120,
-      align: "center" as const,
-      render: (min: number) => (min ? `~${min} min` : "—"),
+      render: (isActive: boolean) =>
+        isActive === false ? (
+          <Tag color="default">Inactive</Tag>
+        ) : (
+          <Tag color="success">Active</Tag>
+        ),
     },
     {
       title: "Actions",
@@ -136,8 +127,8 @@ const Agents = () => {
 
   return (
     <div>
-      <PageMeta title="Agents | Zoom Property" />
-      <PageHeader title="Agents" breadcrumbs={[{ title: "HR", path: "/employees" }, { title: "Agents" }]} />
+      <PageMeta title="Team Members | Zoom Property" />
+      <PageHeader title="Team Members" breadcrumbs={[{ title: "HR", path: "/employees" }, { title: "Team Members" }]} />
 
       <PermissionGate module="Agents" action="Read">
         <div className="mt-6 rounded-lg border border-secondary-200 bg-white">
@@ -146,7 +137,7 @@ const Agents = () => {
               <Search className="h-4 w-4" />
               <input
                 type="text"
-                placeholder="Search agents..."
+                placeholder="Search team members..."
                 className="w-full bg-transparent text-sm outline-none placeholder:text-secondary-400"
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -157,7 +148,7 @@ const Agents = () => {
                 icon={<Plus className="h-4 w-4" />}
                 onClick={() => setOpen(true)}
               >
-                Add Agent
+                Add Team Member
               </Button>
             </PermissionGate>
           </div>
