@@ -33,7 +33,7 @@ import {
   toDescriptionArray,
   translateRichTextToBangla,
 } from "../../utils/richText";
-import { STAGES } from "./projectMeta";
+import { BANNER_SIZE_HINT, featureSizeHint, STAGES } from "./projectMeta";
 
 interface Props {
   /** Undefined when creating. */
@@ -86,21 +86,41 @@ const ProjectForm = ({
 
   useEffect(() => {
     if (!initial) return;
-    form.setFieldsValue({
-      ...initial,
-      area: initial.area?._id ?? initial.area,
-      subArea: initial.subArea?._id ?? initial.subArea,
-      agent: initial.agent?._id ?? initial.agent,
-      coverImage: initial.coverImage?._id ?? initial.coverImage,
-      coverImageUrl: mediaSrc(initial.coverImage),
-      images: (initial.images || []).map((i: any) => i?._id ?? i),
-      imageUrls: (initial.images || []).map((i: any) => mediaSrc(i)).filter(Boolean),
-      lastInspected: initial.lastInspected
-        ? dayjs(initial.lastInspected)
-        : undefined,
-      description: normalizeDescriptionForEditor(initial.description),
-      descriptionBn: normalizeDescriptionForEditor(initial.descriptionBn),
-    });
+      const features = (initial.features || []).map((f: any, i: number) => {
+        const previewUrl = mediaSrc(f.image);
+        return {
+          ...f,
+          image: f.image?._id ?? f.image,
+          imageUrl: previewUrl || undefined,
+        };
+      });
+
+      form.setFieldsValue({
+        ...initial,
+        features,
+        area: initial.area?._id ?? initial.area,
+        subArea: initial.subArea?._id ?? initial.subArea,
+        agent: initial.agent?._id ?? initial.agent,
+        coverImage: initial.coverImage?._id ?? initial.coverImage,
+        coverImageUrl: mediaSrc(initial.coverImage),
+        images: (initial.images || []).map((i: any) => i?._id ?? i),
+        imageUrls: (initial.images || []).map((i: any) => mediaSrc(i)).filter(Boolean),
+        lastInspected: initial.lastInspected
+          ? dayjs(initial.lastInspected)
+          : undefined,
+        description: normalizeDescriptionForEditor(initial.description),
+        descriptionBn: normalizeDescriptionForEditor(initial.descriptionBn),
+        specs: {
+          heroImage: initial.specs?.heroImage?._id ?? initial.specs?.heroImage,
+          description: initial.specs?.description || "",
+        },
+        specsHeroImageUrl: mediaSrc(initial.specs?.heroImage),
+        video: {
+          ...initial.video,
+          poster: initial.video?.poster?._id ?? initial.video?.poster,
+        },
+        videoPosterUrl: mediaSrc(initial.video?.poster),
+      });
   }, [initial, form]);
 
   const [submitting, setSubmitting] = useState(false);
@@ -109,17 +129,26 @@ const ProjectForm = ({
   const handleFinish = async (values: any) => {
     setSubmitting(true);
     try {
-      const { coverImageUrl, imageUrls, ...rest } = values;
-      void coverImageUrl;
-      void imageUrls;
+      const { coverImageUrl, imageUrls, specsHeroImageUrl, videoPosterUrl, ...rest } = values;
+      
+      const featuresToSubmit = (rest.features || []).map((f: any) => {
+        const { imageUrl, ...restFeature } = f;
+        return restFeature;
+      });
+
       await onSubmit({
         ...rest,
+        features: featuresToSubmit,
         video: rest.video
           ? { ...rest.video, youtubeUrl: normalizeUrl(rest.video.youtubeUrl) }
           : undefined,
         mapUrl: normalizeUrl(values.mapUrl),
         description: toDescriptionArray(values.description),
         descriptionBn: toDescriptionArray(values.descriptionBn),
+        specs: {
+          heroImage: rest.specs?.heroImage || null,
+          description: isEmptyRichText(rest.specs?.description) ? "" : rest.specs.description,
+        },
         lastInspected: values.lastInspected
           ? values.lastInspected.toISOString()
           : null,
@@ -422,6 +451,128 @@ const ProjectForm = ({
               </div>
             </div>
 
+            {/* 2.5 Features (Dynamic Sections) */}
+            <div className="space-y-4 pt-8">
+              <div>
+                <h3 className="text-base font-semibold text-foreground">
+                  Project Features (প্রজেক্ট ফিচারসমূহ)
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Dynamic feature sections (e.g. Building, Smart Home, Security) shown on the details page.
+                </p>
+              </div>
+
+              <div className="pt-2">
+                <Form.List name="features">
+                  {(fields, { add, remove }) => (
+                    <div className="space-y-4">
+                      {fields.map((field) => (
+                        <div key={field.key} className="rounded-lg border border-gray-200 bg-gray-50/50 p-4 relative">
+                          <Button
+                            type="primary"
+                            danger
+                            icon={<Trash2 className="h-4 w-4" />}
+                            className="absolute top-4 right-4 z-10"
+                            onClick={() => remove(field.name)}
+                          />
+                          
+                          <Row gutter={16}>
+                            <Col xs={24} md={12}>
+                              <Form.Item
+                                {...field}
+                                name={[field.name, "eyebrow"]}
+                                label="Section Label / Eyebrow"
+                                className="!mb-4"
+                              >
+                                <Input placeholder="e.g. Exterior" />
+                              </Form.Item>
+                            </Col>
+                            <Col xs={24} md={12}>
+                               <Form.Item
+                                {...field}
+                                name={[field.name, "eyebrowBn"]}
+                                label="Section Label / Eyebrow (Bangla)"
+                                className="!mb-4"
+                              >
+                                <Input placeholder="e.g. বহিরাঙ্গন" />
+                              </Form.Item>
+                            </Col>
+                            
+                            <Col xs={24} md={12}>
+                              <Form.Item
+                                {...field}
+                                name={[field.name, "title"]}
+                                label="Title"
+                                rules={[{ required: true, message: "Required" }]}
+                                className="!mb-4"
+                              >
+                                <Input placeholder="e.g. Modern Architecture" />
+                              </Form.Item>
+                            </Col>
+                            <Col xs={24} md={12}>
+                              <Form.Item
+                                {...field}
+                                name={[field.name, "titleBn"]}
+                                label="Title (Bangla)"
+                                className="!mb-4"
+                              >
+                                <Input placeholder="e.g. আধুনিক স্থাপত্য" />
+                              </Form.Item>
+                            </Col>
+                            
+                            <Col xs={24}>
+                              <Form.Item
+                                {...field}
+                                name={[field.name, "description"]}
+                                label="Description (English)"
+                                className="!mb-4"
+                              >
+                                <RichTextEditor placeholder="Feature description in English..." height={400} />
+                              </Form.Item>
+                            </Col>
+                            <Col xs={24}>
+                              <Form.Item
+                                {...field}
+                                name={[field.name, "descriptionBn"]}
+                                label="Description (Bangla)"
+                                className="!mb-4"
+                              >
+                                <RichTextEditor placeholder="বাংলায় ফিচার বিবরণ..." height={400} />
+                              </Form.Item>
+                            </Col>
+                            
+                            <Col xs={24} md={8}>
+                              <Form.Item
+                                label="Feature Image"
+                                tooltip={`Feature ${field.name + 1} on the website: ${featureSizeHint(field.name)}`}
+                                extra={featureSizeHint(field.name)}
+                              >
+                                <UploadMedia
+                                  form={form}
+                                  fieldPath={["features", field.name, "imageUrl"]}
+                                  idFieldPath={["features", field.name, "image"]}
+                                  type="image"
+                                />
+                              </Form.Item>
+                            </Col>
+                          </Row>
+                        </div>
+                      ))}
+                      
+                      <Button
+                        type="dashed"
+                        onClick={() => add({})}
+                        block
+                        icon={<Plus className="h-4 w-4" />}
+                        className="h-12 border-dashed border-gray-300"
+                      >
+                        Add Feature Section
+                      </Button>
+                    </div>
+                  )}
+                </Form.List>
+              </div>
+            </div>
             {/* 3. Media & Attachments */}
             <div className="space-y-4 pt-8">
               <div>
@@ -435,7 +586,11 @@ const ProjectForm = ({
 
               <Row gutter={16}>
                 <Col xs={24} md={8}>
-                  <Form.Item label="Cover image">
+                  <Form.Item
+                    label="Cover image"
+                    tooltip={`First slide of the Overview banner. ${BANNER_SIZE_HINT}`}
+                    extra={BANNER_SIZE_HINT}
+                  >
                     <UploadMedia
                       form={form}
                       fieldPath="coverImageUrl"
@@ -445,7 +600,11 @@ const ProjectForm = ({
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={16}>
-                  <Form.Item label="Gallery">
+                  <Form.Item
+                    label="Gallery"
+                    tooltip={`The rest of the Overview banner slides. ${BANNER_SIZE_HINT}`}
+                    extra={BANNER_SIZE_HINT}
+                  >
                     <UploadMedia
                       form={form}
                       fieldPath="imageUrls"
@@ -510,7 +669,103 @@ const ProjectForm = ({
               </Form.Item>
             </div>
 
-            {/* 5. Publishing & Settings */}
+            {/* 5. Specs tab */}
+            <div className="space-y-4 pt-8">
+              <div>
+                <h3 className="text-base font-semibold text-foreground">
+                  Specs Tab (স্পেসিফিকেশন)
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Hero image and rich-text write-up shown under the "Specs" tab on the project page
+                </p>
+              </div>
+
+              <Form.Item
+                label="Specs hero image"
+                tooltip={`Banner at the top of the Specs tab. ${BANNER_SIZE_HINT}`}
+                extra={BANNER_SIZE_HINT}
+              >
+                <UploadMedia
+                  form={form}
+                  fieldPath="specsHeroImageUrl"
+                  idFieldPath={["specs", "heroImage"]}
+                  type="image"
+                />
+              </Form.Item>
+              <Form.Item label="Specs description" name={["specs", "description"]}>
+                <RichTextEditor placeholder="Specifications..." height={400} />
+              </Form.Item>
+            </div>
+
+            {/* 6. Video */}
+            <div className="space-y-4 pt-8">
+              <div>
+                <h3 className="text-base font-semibold text-foreground">
+                  Site Walkthrough Video (ভিডিও)
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  YouTube video shown in the dark band below the project features
+                </p>
+              </div>
+
+              <Row gutter={16}>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Video Title (English)"
+                    name={["video", "title"]}
+                    tooltip="Heading shown above the video player"
+                  >
+                    <Input placeholder="e.g. Site Walkthrough — Al Zahra" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Video Title (Bangla)"
+                    name={["video", "titleBn"]}
+                    tooltip="বাংলায় শিরোনাম"
+                  >
+                    <Input placeholder="যেমন: সাইট পরিদর্শন — আল জাহরা" />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Row gutter={16}>
+                <Col xs={24} md={16}>
+                  <Form.Item
+                    label="YouTube URL"
+                    name={["video", "youtubeUrl"]}
+                    tooltip="Full YouTube video URL or bare video ID"
+                    rules={[urlRule]}
+                  >
+                    <Input placeholder="https://www.youtube.com/watch?v=..." />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={8}>
+                  <Form.Item
+                    label="Duration"
+                    name={["video", "duration"]}
+                    tooltip='Optional display duration, e.g. "3:42"'
+                  >
+                    <Input placeholder="3:42" />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Form.Item
+                label="Video Poster / Thumbnail"
+                tooltip="Custom thumbnail shown before the video plays. Recommended: 1344×527 px"
+                extra="Recommended size: 1344 × 527 px (wide banner)"
+              >
+                <UploadMedia
+                  form={form}
+                  fieldPath="videoPosterUrl"
+                  idFieldPath={["video", "poster"]}
+                  type="image"
+                />
+              </Form.Item>
+            </div>
+
+            {/* 7. Publishing & Settings */}
             <div className="space-y-4 pt-8">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
