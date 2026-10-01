@@ -86,21 +86,33 @@ const ProjectForm = ({
 
   useEffect(() => {
     if (!initial) return;
-    form.setFieldsValue({
-      ...initial,
-      area: initial.area?._id ?? initial.area,
-      subArea: initial.subArea?._id ?? initial.subArea,
-      agent: initial.agent?._id ?? initial.agent,
-      coverImage: initial.coverImage?._id ?? initial.coverImage,
-      coverImageUrl: mediaSrc(initial.coverImage),
-      images: (initial.images || []).map((i: any) => i?._id ?? i),
-      imageUrls: (initial.images || []).map((i: any) => mediaSrc(i)).filter(Boolean),
-      lastInspected: initial.lastInspected
-        ? dayjs(initial.lastInspected)
-        : undefined,
-      description: normalizeDescriptionForEditor(initial.description),
-      descriptionBn: normalizeDescriptionForEditor(initial.descriptionBn),
-    });
+      const features = (initial.features || []).map((f: any, i: number) => {
+        const previewUrl = mediaSrc(f.image);
+        if (previewUrl) {
+          form.setFieldValue(`features_${i}_imageUrl`, previewUrl);
+        }
+        return {
+          ...f,
+          image: f.image?._id ?? f.image,
+        };
+      });
+
+      form.setFieldsValue({
+        ...initial,
+        area: initial.area?._id ?? initial.area,
+        subArea: initial.subArea?._id ?? initial.subArea,
+        agent: initial.agent?._id ?? initial.agent,
+        coverImage: initial.coverImage?._id ?? initial.coverImage,
+        coverImageUrl: mediaSrc(initial.coverImage),
+        images: (initial.images || []).map((i: any) => i?._id ?? i),
+        imageUrls: (initial.images || []).map((i: any) => mediaSrc(i)).filter(Boolean),
+        lastInspected: initial.lastInspected
+          ? dayjs(initial.lastInspected)
+          : undefined,
+        description: normalizeDescriptionForEditor(initial.description),
+        descriptionBn: normalizeDescriptionForEditor(initial.descriptionBn),
+        features,
+      });
   }, [initial, form]);
 
   const [submitting, setSubmitting] = useState(false);
@@ -109,7 +121,11 @@ const ProjectForm = ({
   const handleFinish = async (values: any) => {
     setSubmitting(true);
     try {
-      const { coverImageUrl, imageUrls, ...rest } = values;
+      // Filter out dynamically created image preview URL keys for features
+      const cleanValues = Object.fromEntries(
+        Object.entries(values).filter(([key]) => !key.startsWith("features_") || !key.endsWith("_imageUrl"))
+      ) as any;
+      const { coverImageUrl, imageUrls, ...rest } = cleanValues;
       void coverImageUrl;
       void imageUrls;
       await onSubmit({
@@ -422,6 +438,124 @@ const ProjectForm = ({
               </div>
             </div>
 
+            {/* 2.5 Features (Dynamic Sections) */}
+            <div className="space-y-4 pt-8">
+              <div>
+                <h3 className="text-base font-semibold text-foreground">
+                  Project Features (প্রজেক্ট ফিচারসমূহ)
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Dynamic feature sections (e.g. Building, Smart Home, Security) shown on the details page.
+                </p>
+              </div>
+
+              <div className="pt-2">
+                <Form.List name="features">
+                  {(fields, { add, remove }) => (
+                    <div className="space-y-4">
+                      {fields.map((field) => (
+                        <div key={field.key} className="rounded-lg border border-gray-200 bg-gray-50/50 p-4 relative">
+                          <Button
+                            type="primary"
+                            danger
+                            icon={<Trash2 className="h-4 w-4" />}
+                            className="absolute top-4 right-4 z-10"
+                            onClick={() => remove(field.name)}
+                          />
+                          
+                          <Row gutter={16}>
+                            <Col xs={24} md={12}>
+                              <Form.Item
+                                {...field}
+                                name={[field.name, "eyebrow"]}
+                                label="Section Label / Eyebrow"
+                                className="!mb-4"
+                              >
+                                <Input placeholder="e.g. Exterior" />
+                              </Form.Item>
+                            </Col>
+                            <Col xs={24} md={12}>
+                               <Form.Item
+                                {...field}
+                                name={[field.name, "eyebrowBn"]}
+                                label="Section Label / Eyebrow (Bangla)"
+                                className="!mb-4"
+                              >
+                                <Input placeholder="e.g. বহিরাঙ্গন" />
+                              </Form.Item>
+                            </Col>
+                            
+                            <Col xs={24} md={12}>
+                              <Form.Item
+                                {...field}
+                                name={[field.name, "title"]}
+                                label="Title"
+                                rules={[{ required: true, message: "Required" }]}
+                                className="!mb-4"
+                              >
+                                <Input placeholder="e.g. Modern Architecture" />
+                              </Form.Item>
+                            </Col>
+                            <Col xs={24} md={12}>
+                              <Form.Item
+                                {...field}
+                                name={[field.name, "titleBn"]}
+                                label="Title (Bangla)"
+                                className="!mb-4"
+                              >
+                                <Input placeholder="e.g. আধুনিক স্থাপত্য" />
+                              </Form.Item>
+                            </Col>
+                            
+                            <Col xs={24}>
+                              <Form.Item
+                                {...field}
+                                name={[field.name, "description"]}
+                                label="Description (English)"
+                                className="!mb-4"
+                              >
+                                <RichTextEditor placeholder="Feature description in English..." height={400} />
+                              </Form.Item>
+                            </Col>
+                            <Col xs={24}>
+                              <Form.Item
+                                {...field}
+                                name={[field.name, "descriptionBn"]}
+                                label="Description (Bangla)"
+                                className="!mb-4"
+                              >
+                                <RichTextEditor placeholder="বাংলায় ফিচার বিবরণ..." height={400} />
+                              </Form.Item>
+                            </Col>
+                            
+                            <Col xs={24} md={8}>
+                              <Form.Item label="Feature Image">
+                                <UploadMedia
+                                  form={form}
+                                  fieldPath={`features_${field.name}_imageUrl`}
+                                  idFieldPath={["features", field.name, "image"]}
+                                  type="image"
+                                />
+                              </Form.Item>
+                            </Col>
+                          </Row>
+                        </div>
+                      ))}
+                      
+                      <Button
+                        type="dashed"
+                        onClick={() => add({})}
+                        block
+                        icon={<Plus className="h-4 w-4" />}
+                        className="h-12 border-dashed border-gray-300"
+                      >
+                        Add Feature Section
+                      </Button>
+                    </div>
+                  )}
+                </Form.List>
+              </div>
+            </div>
             {/* 3. Media & Attachments */}
             <div className="space-y-4 pt-8">
               <div>
