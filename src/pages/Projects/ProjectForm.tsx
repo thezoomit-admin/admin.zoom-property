@@ -33,7 +33,7 @@ import {
   toDescriptionArray,
   translateRichTextToBangla,
 } from "../../utils/richText";
-import { STAGES } from "./projectMeta";
+import { BANNER_SIZE_HINT, featureSizeHint, STAGES } from "./projectMeta";
 
 interface Props {
   /** Undefined when creating. */
@@ -88,17 +88,16 @@ const ProjectForm = ({
     if (!initial) return;
       const features = (initial.features || []).map((f: any, i: number) => {
         const previewUrl = mediaSrc(f.image);
-        if (previewUrl) {
-          form.setFieldValue(`features_${i}_imageUrl`, previewUrl);
-        }
         return {
           ...f,
           image: f.image?._id ?? f.image,
+          imageUrl: previewUrl || undefined,
         };
       });
 
       form.setFieldsValue({
         ...initial,
+        features,
         area: initial.area?._id ?? initial.area,
         subArea: initial.subArea?._id ?? initial.subArea,
         agent: initial.agent?._id ?? initial.agent,
@@ -111,7 +110,11 @@ const ProjectForm = ({
           : undefined,
         description: normalizeDescriptionForEditor(initial.description),
         descriptionBn: normalizeDescriptionForEditor(initial.descriptionBn),
-        features,
+        specs: {
+          heroImage: initial.specs?.heroImage?._id ?? initial.specs?.heroImage,
+          description: initial.specs?.description || "",
+        },
+        specsHeroImageUrl: mediaSrc(initial.specs?.heroImage),
       });
   }, [initial, form]);
 
@@ -121,21 +124,26 @@ const ProjectForm = ({
   const handleFinish = async (values: any) => {
     setSubmitting(true);
     try {
-      // Filter out dynamically created image preview URL keys for features
-      const cleanValues = Object.fromEntries(
-        Object.entries(values).filter(([key]) => !key.startsWith("features_") || !key.endsWith("_imageUrl"))
-      ) as any;
-      const { coverImageUrl, imageUrls, ...rest } = cleanValues;
-      void coverImageUrl;
-      void imageUrls;
+      const { coverImageUrl, imageUrls, specsHeroImageUrl, ...rest } = values;
+      
+      const featuresToSubmit = (rest.features || []).map((f: any) => {
+        const { imageUrl, ...restFeature } = f;
+        return restFeature;
+      });
+
       await onSubmit({
         ...rest,
+        features: featuresToSubmit,
         video: rest.video
           ? { ...rest.video, youtubeUrl: normalizeUrl(rest.video.youtubeUrl) }
           : undefined,
         mapUrl: normalizeUrl(values.mapUrl),
         description: toDescriptionArray(values.description),
         descriptionBn: toDescriptionArray(values.descriptionBn),
+        specs: {
+          heroImage: rest.specs?.heroImage || null,
+          description: isEmptyRichText(rest.specs?.description) ? "" : rest.specs.description,
+        },
         lastInspected: values.lastInspected
           ? values.lastInspected.toISOString()
           : null,
@@ -529,10 +537,14 @@ const ProjectForm = ({
                             </Col>
                             
                             <Col xs={24} md={8}>
-                              <Form.Item label="Feature Image">
+                              <Form.Item
+                                label="Feature Image"
+                                tooltip={`Feature ${field.name + 1} on the website: ${featureSizeHint(field.name)}`}
+                                extra={featureSizeHint(field.name)}
+                              >
                                 <UploadMedia
                                   form={form}
-                                  fieldPath={`features_${field.name}_imageUrl`}
+                                  fieldPath={["features", field.name, "imageUrl"]}
                                   idFieldPath={["features", field.name, "image"]}
                                   type="image"
                                 />
@@ -569,7 +581,11 @@ const ProjectForm = ({
 
               <Row gutter={16}>
                 <Col xs={24} md={8}>
-                  <Form.Item label="Cover image">
+                  <Form.Item
+                    label="Cover image"
+                    tooltip={`First slide of the Overview banner. ${BANNER_SIZE_HINT}`}
+                    extra={BANNER_SIZE_HINT}
+                  >
                     <UploadMedia
                       form={form}
                       fieldPath="coverImageUrl"
@@ -579,7 +595,11 @@ const ProjectForm = ({
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={16}>
-                  <Form.Item label="Gallery">
+                  <Form.Item
+                    label="Gallery"
+                    tooltip={`The rest of the Overview banner slides. ${BANNER_SIZE_HINT}`}
+                    extra={BANNER_SIZE_HINT}
+                  >
                     <UploadMedia
                       form={form}
                       fieldPath="imageUrls"
@@ -644,7 +664,35 @@ const ProjectForm = ({
               </Form.Item>
             </div>
 
-            {/* 5. Publishing & Settings */}
+            {/* 5. Specs tab */}
+            <div className="space-y-4 pt-8">
+              <div>
+                <h3 className="text-base font-semibold text-foreground">
+                  Specs Tab (স্পেসিফিকেশন)
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Hero image and rich-text write-up shown under the "Specs" tab on the project page
+                </p>
+              </div>
+
+              <Form.Item
+                label="Specs hero image"
+                tooltip={`Banner at the top of the Specs tab. ${BANNER_SIZE_HINT}`}
+                extra={BANNER_SIZE_HINT}
+              >
+                <UploadMedia
+                  form={form}
+                  fieldPath="specsHeroImageUrl"
+                  idFieldPath={["specs", "heroImage"]}
+                  type="image"
+                />
+              </Form.Item>
+              <Form.Item label="Specs description" name={["specs", "description"]}>
+                <RichTextEditor placeholder="Specifications..." height={400} />
+              </Form.Item>
+            </div>
+
+            {/* 6. Publishing & Settings */}
             <div className="space-y-4 pt-8">
               <div>
                 <h3 className="text-base font-semibold text-foreground">

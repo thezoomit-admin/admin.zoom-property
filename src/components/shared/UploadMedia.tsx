@@ -3,7 +3,7 @@ import UploadVideo from "./UploadVideo";
 
 interface UploadMediaProps {
   form: any;
-  fieldPath: string;
+  fieldPath: string | (string | number)[];
   idFieldPath?: string | (string | number)[];
   mode?: "single" | "multiple";
   type: "image" | "video" | "audio" | "document" | "other";
