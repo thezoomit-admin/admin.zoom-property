@@ -115,6 +115,11 @@ const ProjectForm = ({
           description: initial.specs?.description || "",
         },
         specsHeroImageUrl: mediaSrc(initial.specs?.heroImage),
+        video: {
+          ...initial.video,
+          poster: initial.video?.poster?._id ?? initial.video?.poster,
+        },
+        videoPosterUrl: mediaSrc(initial.video?.poster),
       });
   }, [initial, form]);
 
@@ -124,7 +129,7 @@ const ProjectForm = ({
   const handleFinish = async (values: any) => {
     setSubmitting(true);
     try {
-      const { coverImageUrl, imageUrls, specsHeroImageUrl, ...rest } = values;
+      const { coverImageUrl, imageUrls, specsHeroImageUrl, videoPosterUrl, ...rest } = values;
       
       const featuresToSubmit = (rest.features || []).map((f: any) => {
         const { imageUrl, ...restFeature } = f;
@@ -692,7 +697,75 @@ const ProjectForm = ({
               </Form.Item>
             </div>
 
-            {/* 6. Publishing & Settings */}
+            {/* 6. Video */}
+            <div className="space-y-4 pt-8">
+              <div>
+                <h3 className="text-base font-semibold text-foreground">
+                  Site Walkthrough Video (ভিডিও)
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  YouTube video shown in the dark band below the project features
+                </p>
+              </div>
+
+              <Row gutter={16}>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Video Title (English)"
+                    name={["video", "title"]}
+                    tooltip="Heading shown above the video player"
+                  >
+                    <Input placeholder="e.g. Site Walkthrough — Al Zahra" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Video Title (Bangla)"
+                    name={["video", "titleBn"]}
+                    tooltip="বাংলায় শিরোনাম"
+                  >
+                    <Input placeholder="যেমন: সাইট পরিদর্শন — আল জাহরা" />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Row gutter={16}>
+                <Col xs={24} md={16}>
+                  <Form.Item
+                    label="YouTube URL"
+                    name={["video", "youtubeUrl"]}
+                    tooltip="Full YouTube video URL or bare video ID"
+                    rules={[urlRule]}
+                  >
+                    <Input placeholder="https://www.youtube.com/watch?v=..." />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={8}>
+                  <Form.Item
+                    label="Duration"
+                    name={["video", "duration"]}
+                    tooltip='Optional display duration, e.g. "3:42"'
+                  >
+                    <Input placeholder="3:42" />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Form.Item
+                label="Video Poster / Thumbnail"
+                tooltip="Custom thumbnail shown before the video plays. Recommended: 1344×527 px"
+                extra="Recommended size: 1344 × 527 px (wide banner)"
+              >
+                <UploadMedia
+                  form={form}
+                  fieldPath="videoPosterUrl"
+                  idFieldPath={["video", "poster"]}
+                  type="image"
+                />
+              </Form.Item>
+            </div>
+
+            {/* 7. Publishing & Settings */}
             <div className="space-y-4 pt-8">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
