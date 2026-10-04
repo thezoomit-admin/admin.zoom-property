@@ -96,23 +96,12 @@ const BudgetRanges: React.FC = () => {
       ),
     },
     {
-      title: "English",
+      title: "Name",
       dataIndex: "name",
       key: "name",
       render: (text: string) => (
         <span className="font-medium text-secondary-900">{text}</span>
       ),
-    },
-    {
-      title: "Bangla",
-      dataIndex: "nameBn",
-      key: "nameBn",
-      render: (text: string) =>
-        text ? (
-          <span className="text-secondary-800">{text}</span>
-        ) : (
-          <span className="text-gray-400">—</span>
-        ),
     },
     {
       title: "Value",
@@ -183,7 +172,7 @@ const BudgetRanges: React.FC = () => {
       />
       <PageHeader
         title="Budget Ranges"
-        subtitle="Contact form বাজেট অপশন — English ও বাংলা লেবেল এডিট করুন"
+        subtitle="Edit the budget options displayed in the contact form."
         breadcrumbs={[
           { title: "Dashboard", path: "/" },
           { title: "Settings" },
@@ -197,13 +186,12 @@ const BudgetRanges: React.FC = () => {
                   title: "Budget Ranges",
                   unit: "range",
                   filters: [searchText && `Search: "${searchText}"`],
-                  headers: ["Order", "English", "Bangla", "Value", "Status"],
+                  headers: ["Order", "Name", "Value", "Status"],
                   rows: items,
                   isLow: (r: IBudgetRange) => !r.isActive,
                   cells: (r: IBudgetRange) => [
                     String(r.order ?? 0),
                     r.name || "—",
-                    r.nameBn || "—",
                     r.value || "—",
                     r.isActive ? "Active" : "Inactive",
                   ],

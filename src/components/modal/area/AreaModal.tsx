@@ -119,29 +119,9 @@ const AreaModal = ({ open, onClose, area }: Props) => {
               placeholder="Gulshan (1 & 2)"
             />
           </Col>
-          <Col xs={24} md={12}>
-            <LangInput
-              label="Name (Bangla)"
-              name="nameBn"
-              lang="bn"
-              sourceFieldName="name"
-              form={form}
-              placeholder="গুলশান"
-            />
-          </Col>
 
           <Col xs={24} md={12}>
             <LangInput label="Tagline" name="tagline" lang="en" placeholder="Premium service" />
-          </Col>
-          <Col xs={24} md={12}>
-            <LangInput
-              label="Tagline (Bangla)"
-              name="taglineBn"
-              lang="bn"
-              sourceFieldName="tagline"
-              form={form}
-              placeholder="প্রিমিয়াম সার্ভিস ও লাইফস্টাইল"
-            />
           </Col>
 
           <Col xs={24}>
@@ -157,33 +137,22 @@ const AreaModal = ({ open, onClose, area }: Props) => {
               placeholder="Why people choose it"
             />
           </Col>
-          <Col xs={24}>
-            <LangInput
-              label="Note (Bangla)"
-              name="noteBn"
-              lang="bn"
-              isTextArea
-              sourceFieldName="note"
-              form={form}
-              placeholder="কেন মানুষ এই এলাকা পছন্দ করে"
-            />
-          </Col>
 
           {/* Market & Comparison Metrics */}
           <Col xs={24}>
             <div className="my-2 rounded-lg border border-border/80 bg-muted/20 p-3.5">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs font-bold uppercase tracking-wider text-primary">
-                  Market & Comparison Metrics (বাজার বিশ্লেষণ ও তুলনামূলক ডেটা)
+                  Market & Comparison Metrics
                 </p>
                 <span className="text-[11px] text-muted-foreground">
-                  💡 ভাড়া দিলে Rental Yield অটো হিসাব হবে
+                  💡 Rental yield is calculated automatically from the monthly rent.
                 </span>
               </div>
               <Row gutter={16}>
                 <Col xs={24} md={12}>
                   <Form.Item
-                    label="Median Price (গড় দাম - BDT)"
+                    label="Median Price (BDT)"
                     name="medianPrice"
                     tooltip="Asking median price in BDT. Example: 42500000 for ৳4.25 Cr"
                   >
@@ -203,7 +172,7 @@ const AreaModal = ({ open, onClose, area }: Props) => {
                 </Col>
                 <Col xs={24} md={12}>
                   <Form.Item
-                    label="Price Per Sq Ft (প্রতি বর্গফুটের গড় রেট - BDT)"
+                    label="Price Per Sq Ft (BDT)"
                     name="pricePerSqft"
                     tooltip="Average price per sq ft in BDT. Example: 36000"
                   >
@@ -224,11 +193,11 @@ const AreaModal = ({ open, onClose, area }: Props) => {
                 {/* Auto Monthly Rent Input Helper */}
                 <Col xs={24} md={12}>
                   <Form.Item
-                    label="Estimated Monthly Rent (আনুমানিক মাসিক ভাড়া - BDT)"
-                    tooltip="সাধারণ মাসিক ভাড়া লিখলে স্বয়ংক্রিয়ভাবে ১২ দিয়ে গুণ হয়ে বার্ষিক ভাড়া এবং Rental Yield (%) হিসাব হয়ে যাবে।"
+                    label="Estimated Monthly Rent (BDT)"
+                    tooltip="Annual rent and rental yield are calculated automatically from the monthly rent."
                     extra={
                       monthlyRent
-                        ? `বার্ষিক ভাড়া: ৳ ${(monthlyRent * 12).toLocaleString()} (${monthlyRent.toLocaleString()} × ১২ মাস)`
+                        ? `Annual rent: ৳ ${(monthlyRent * 12).toLocaleString()} (${monthlyRent.toLocaleString()} × 12 months)`
                         : undefined
                     }
                   >
@@ -250,10 +219,10 @@ const AreaModal = ({ open, onClose, area }: Props) => {
 
                 <Col xs={24} md={12}>
                   <Form.Item
-                    label="Rental Yield (বার্ষিক ভাড়া আয়ের শতকরা হার)"
+                    label="Rental Yield"
                     name="rentalYield"
-                    tooltip="মাসিক ভাড়া লিখলে এটি ১২ মাসের হিসাবে স্বয়ংক্রিয়ভাবে বসে যাবে অথবা আপনি সরাসরি পরিবর্তনও করতে পারেন। Example: 6.0%"
-                    extra="টেবিলে এই শতকরা হারটি দেখাবে"
+                    tooltip="Calculated automatically from monthly rent, or enter a value directly. Example: 6.0%."
+                    extra="Displayed in the comparison table."
                   >
                     <Input placeholder="e.g. 6.0%" />
                   </Form.Item>
@@ -261,7 +230,7 @@ const AreaModal = ({ open, onClose, area }: Props) => {
 
                 <Col xs={24} md={12}>
                   <Form.Item
-                    label="Security Tier (নিরাপত্তা ব্যবস্থা)"
+                    label="Security Tier"
                     name="securityTier"
                     tooltip="Security setup. Example: 24/7 Diplomatic Police"
                   >
@@ -270,7 +239,7 @@ const AreaModal = ({ open, onClose, area }: Props) => {
                 </Col>
                 <Col xs={24} md={12}>
                   <Form.Item
-                    label="Metro Connectivity (মেট্রোরেল যোগাযোগ)"
+                    label="Metro Connectivity"
                     name="metroConnectivity"
                     tooltip="Example: 10 mins to MRT Line 6"
                   >

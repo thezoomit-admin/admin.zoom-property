@@ -78,15 +78,6 @@ const UpdateBudgetRangeModal: React.FC<Props> = ({ open, setOpen, data }) => {
           placeholder="e.g. ৳2 – 5 Cr"
         />
 
-        <LangInput
-          label="Name (Bangla)"
-          name="nameBn"
-          lang="bn"
-          sourceFieldName="name"
-          form={form}
-          placeholder="যেমন: ২ – ৫ কোটি"
-        />
-
         <Form.Item
           label="Value"
           name="value"

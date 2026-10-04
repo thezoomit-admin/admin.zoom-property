@@ -143,7 +143,7 @@ const AreaForm = ({
             <div className="space-y-4">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
-                  Basic Details (মৌলিক তথ্য)
+                  Basic Details
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   Name, tagline and general location information
@@ -162,17 +162,6 @@ const AreaForm = ({
                 </Col>
                 <Col xs={24} md={12}>
                   <LangInput
-                    label="Name (Bangla)"
-                    name="nameBn"
-                    lang="bn"
-                    sourceFieldName="name"
-                    form={form}
-                    placeholder="গুলশান (১ ও ২)"
-                  />
-                </Col>
-
-                <Col xs={24} md={12}>
-                  <LangInput
                     label="Tagline (English)"
                     name="tagline"
                     lang="en"
@@ -181,18 +170,7 @@ const AreaForm = ({
                 </Col>
                 <Col xs={24} md={12}>
                   <LangInput
-                    label="Tagline (Bangla)"
-                    name="taglineBn"
-                    lang="bn"
-                    sourceFieldName="tagline"
-                    form={form}
-                    placeholder="কূটনৈতিক অঞ্চল এবং বিলাসবহুল জীবনযাপন"
-                  />
-                </Col>
-
-                <Col xs={24} md={12}>
-                  <LangInput
-                    label="City (শহর)"
+                    label="City"
                     name="city"
                     lang="en"
                     placeholder="Dhaka"
@@ -205,7 +183,7 @@ const AreaForm = ({
             <div className="space-y-4 pt-8">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
-                  Area Highlights & Overview (কেন মানুষ পছন্দ করে)
+                  Area Highlights & Overview
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   Detailed summary explaining what makes this neighborhood desirable
@@ -222,17 +200,6 @@ const AreaForm = ({
                     placeholder="Why people choose it — short overview of neighbourhood..."
                   />
                 </Col>
-                <Col xs={24}>
-                  <LangInput
-                    label="Note (Bangla)"
-                    name="noteBn"
-                    lang="bn"
-                    isTextArea
-                    sourceFieldName="note"
-                    form={form}
-                    placeholder="কেন মানুষ এই এলাকা পছন্দ করে — বিস্তারিত বিবরণ..."
-                  />
-                </Col>
               </Row>
             </div>
 
@@ -241,23 +208,23 @@ const AreaForm = ({
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h3 className="text-base font-semibold text-foreground">
-                    Market & Comparison Metrics (বাজার বিশ্লেষণ ও তুলনামূলক ডেটা)
+                    Market & Comparison Metrics
                   </h3>
                   <p className="text-xs text-muted-foreground">
                     Price benchmarks and connectivity data shown in comparison tables
                   </p>
                 </div>
                 <span className="text-xs bg-primary/10 text-primary font-medium px-2.5 py-1 rounded-full border border-primary/20">
-                  💡 মাসিক ভাড়া দিলে Rental Yield (%) অটো হিসাব হবে
+                  💡 Rental yield is calculated automatically from the monthly rent.
                 </span>
               </div>
 
               <Row gutter={16}>
                 <Col xs={24} md={12}>
                   <Form.Item
-                    label="Median Asking Price (গড় ফ্ল্যাট মূল্য - BDT)"
+                    label="Median Asking Price (BDT)"
                     name="medianPrice"
-                    tooltip="এলাকার ফ্ল্যাটের গড় মূল্য। যেমন: ৫০ লাখ হলে 5000000 লিখবেন।"
+                    tooltip="The area's typical apartment price. Enter 5000000 for BDT 5,000,000."
                   >
                     <InputNumber
                       className="w-full"
@@ -276,9 +243,9 @@ const AreaForm = ({
 
                 <Col xs={24} md={12}>
                   <Form.Item
-                    label="Price Per Sq Ft (প্রতি বর্গফুটের গড় রেট - BDT)"
+                    label="Price Per Sq Ft (BDT)"
                     name="pricePerSqft"
-                    tooltip="প্রতি বর্গফুটের গড় মূল্য। যেমন: 23000"
+                    tooltip="The average price per square foot. For example: 23000."
                   >
                     <InputNumber
                       className="w-full"
@@ -296,11 +263,11 @@ const AreaForm = ({
 
                 <Col xs={24} md={12}>
                   <Form.Item
-                    label="Estimated Monthly Rent (আনুমানিক মাসিক ভাড়া - BDT)"
-                    tooltip="সাধারণ মাসিক ভাড়া লিখলে স্বয়ংক্রিয়ভাবে ১২ দিয়ে গুণ হয়ে বার্ষিক ভাড়া এবং Rental Yield (%) হিসাব হয়ে যাবে।"
+                    label="Estimated Monthly Rent (BDT)"
+                    tooltip="Annual rent and rental yield are calculated automatically from the monthly rent."
                     extra={
                       monthlyRent
-                        ? `বার্ষিক মোট ভাড়া: ৳ ${(monthlyRent * 12).toLocaleString()} (${monthlyRent.toLocaleString()} × ১২ মাস)`
+                        ? `Annual rent: ৳ ${(monthlyRent * 12).toLocaleString()} (${monthlyRent.toLocaleString()} × 12 months)`
                         : undefined
                     }
                   >
@@ -322,10 +289,10 @@ const AreaForm = ({
 
                 <Col xs={24} md={12}>
                   <Form.Item
-                    label="Rental Yield (বার্ষিক ভাড়া আয়ের শতকরা হার)"
+                    label="Rental Yield"
                     name="rentalYield"
-                    tooltip="মাসিক ভাড়া লিখলে এটি ১২ মাসের হিসাবে স্বয়ংক্রিয়ভাবে বসে যাবে অথবা আপনি সরাসরি পরিবর্তনও করতে পারেন। যেমন: 6.0%"
-                    extra="পাবলিক ওয়েবসাইটের Comparison টেবিলে এই শতকরা হারটি দেখাবে"
+                    tooltip="Calculated automatically from monthly rent, or enter a value directly. For example: 6.0%."
+                    extra="Displayed in the public comparison table."
                   >
                     <Input placeholder="e.g. 6.0%" />
                   </Form.Item>
@@ -333,9 +300,9 @@ const AreaForm = ({
 
                 <Col xs={24} md={12}>
                   <Form.Item
-                    label="Security Tier (নিরাপত্তা ব্যবস্থা)"
+                    label="Security Tier"
                     name="securityTier"
-                    tooltip="এলাকার নিরাপত্তা ব্যবস্থা। যেমন: 24/7 Diplomatic Police, CCTV Secured"
+                    tooltip="Describe local security, such as 24/7 diplomatic police or CCTV."
                   >
                     <Input placeholder="e.g. 24/7 Diplomatic Police" />
                   </Form.Item>
@@ -343,9 +310,9 @@ const AreaForm = ({
 
                 <Col xs={24} md={12}>
                   <Form.Item
-                    label="Metro Connectivity (মেট্রোরেল যোগাযোগ)"
+                    label="Metro Connectivity"
                     name="metroConnectivity"
-                    tooltip="মেট্রোরেল সুবিধা। যেমন: 10 mins to MRT Line 6"
+                    tooltip="Describe access to nearby metro stations."
                   >
                     <Input placeholder="e.g. 10 mins to MRT Line 6" />
                   </Form.Item>
@@ -357,7 +324,7 @@ const AreaForm = ({
             <div className="space-y-4 pt-8">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
-                  Media & Publishing (ছবি ও সেটিংস)
+                  Media & Publishing
                 </h3>
                 <p className="text-xs text-muted-foreground mb-4">
                   Upload area thumbnail and configure visibility options
@@ -369,7 +336,7 @@ const AreaForm = ({
 
               <Row gutter={16}>
                 <Col xs={24} md={12}>
-                  <Form.Item label="Featured Area Image (এরিয়ার ছবি)">
+                  <Form.Item label="Featured Area Image">
                     <UploadMedia
                       form={form}
                       fieldPath="imageUrl"

@@ -118,7 +118,6 @@ const Areas = () => {
               <p className="font-medium text-secondary-800">{name}</p>
               <p className="text-xs text-secondary-500">
                 {r.city}
-                {r.nameBn ? ` · ${r.nameBn}` : ""}
               </p>
             </div>
           </div>
@@ -130,8 +129,8 @@ const Areas = () => {
       dataIndex: "note",
       key: "note",
       width: 240,
-      render: (note: string, r: any) => {
-        const text = note || r.noteBn || "";
+      render: (note: string) => {
+        const text = note || "";
         if (!text) return <span className="text-secondary-400">—</span>;
         return (
           <Tooltip title={<div className="max-w-sm whitespace-pre-wrap text-xs">{text}</div>}>

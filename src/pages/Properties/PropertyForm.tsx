@@ -10,13 +10,11 @@ import {
   Row,
   Select,
   Switch,
-  Tooltip,
 } from "antd";
 import dayjs from "dayjs";
-import { ArrowLeft, Languages, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 
 import LangInput from "../../components/Common/LangInput";
 import PageHeader from "../../components/Common/PageHeader";
@@ -35,10 +33,8 @@ import {
 import { normalizeUrl, urlRule } from "../../utils/normalizeUrl";
 import { mediaSrc } from "../../utils/mediaSrc";
 import {
-  isEmptyRichText,
   normalizeDescriptionForEditor,
   toDescriptionArray,
-  translateRichTextToBangla,
 } from "../../utils/richText";
 
 interface Props {
@@ -62,26 +58,6 @@ const PropertyForm = ({
 }: Props) => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
-  const [translatingDescBn, setTranslatingDescBn] = useState(false);
-
-  const handleTranslateDescription = async () => {
-    const enText = form.getFieldValue("description");
-    if (isEmptyRichText(enText)) {
-      toast.info("অনুবাদের জন্য আগে ইংরেজিতে বিবরণ (English description) লিখুন");
-      return;
-    }
-    setTranslatingDescBn(true);
-    try {
-      const bnText = await translateRichTextToBangla(enText);
-      form.setFieldsValue({ descriptionBn: bnText });
-      toast.success("বিবরণ বাংলায় রূপান্তর করা হয়েছে!");
-    } catch {
-      toast.error("অনুবাদ করতে সমস্যা হয়েছে");
-    } finally {
-      setTranslatingDescBn(false);
-    }
-  };
-
   const { data: areaData } = useGetAreasQuery({ limit: 300, activeOnly: true });
   const { data: agentData } = useGetAgentsQuery({ limit: 300 });
   const { data: projectData } = useGetProjectsQuery({ limit: 300, activeOnly: true });
@@ -180,7 +156,7 @@ const PropertyForm = ({
             <div className="space-y-4">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
-                  The Basics (মৌলিক তথ্য)
+                  The Basics
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   Title, pricing, property category and listing status
@@ -198,14 +174,6 @@ const PropertyForm = ({
                   />
                 </Col>
                 <Col xs={24} md={12}>
-                  <LangInput
-                    label="Title (Bangla)"
-                    name="titleBn"
-                    lang="bn"
-                    sourceFieldName="title"
-                    form={form}
-                    placeholder="বাংলা শিরোনাম"
-                  />
                 </Col>
 
                 <Col xs={24} md={8}>
@@ -214,9 +182,7 @@ const PropertyForm = ({
                       placeholder="Select property type"
                       options={(Array.isArray(propertyTypes) ? propertyTypes : (propertyTypes as any)?.rows || []).map((t: any) => ({
                         value: t.name,
-                        label: t.nameBn
-                          ? `${t.description || t.name} (${t.nameBn})`
-                          : t.description || t.name,
+                        label: t.description || t.name,
                       }))}
                     />
                   </Form.Item>
@@ -266,7 +232,7 @@ const PropertyForm = ({
             <div className="space-y-4 pt-8">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
-                  Where It Is (অবস্থান ও ঠিকানা)
+                  Where It Is
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   Area assignment and published address information
@@ -312,7 +278,7 @@ const PropertyForm = ({
             <div className="space-y-4 pt-8">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
-                  The Property (স্পেসিফিকেশন ও সুযোগ-সুবিধা)
+                  The Property
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   Rooms, measurements, furnishing, permits and amenities
@@ -432,7 +398,7 @@ const PropertyForm = ({
             <div className="space-y-4 pt-8">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
-                  Media & Visuals (ছবি ও ভিডিও)
+                  Media & Visuals
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   Upload high resolution cover photo, image gallery, and video walkthrough
@@ -478,7 +444,7 @@ const PropertyForm = ({
             <div className="space-y-4 pt-8">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
-                  Project Association & Features (প্রজেক্ট ও প্রচার সেটিংস)
+                  Project Association & Features
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   Link to a development project and set visibility preferences
@@ -542,10 +508,10 @@ const PropertyForm = ({
             <div className="space-y-4 pt-8">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
-                  Detailed Description (বিস্তারিত বিবরণ)
+                  Detailed Description
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Comprehensive property details in English and Bangla
+                  Write a clear, detailed description in English.
                 </p>
               </div>
 
@@ -555,35 +521,6 @@ const PropertyForm = ({
                 tooltip="Detailed property description with rich formatting."
               >
                 <RichTextEditor placeholder="Enter description in English..." height={400} />
-              </Form.Item>
-              <Form.Item
-                label={
-                  <div className="flex items-center justify-between w-full gap-2">
-                    <span>Description (Bangla)</span>
-                    <Tooltip title="ইংরেজিতে লেখা বিবরণ থেকে বাংলায় রূপান্তর করুন">
-                      <Button
-                        type="link"
-                        size="small"
-                        className="!px-1 !h-auto !text-xs flex items-center gap-1 text-primary-600 hover:text-primary-700 shrink-0 whitespace-nowrap"
-                        onClick={handleTranslateDescription}
-                        loading={translatingDescBn}
-                        icon={
-                          translatingDescBn ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <Languages className="w-3.5 h-3.5" />
-                          )
-                        }
-                      >
-                        {translatingDescBn ? "রূপান্তর হচ্ছে..." : "বাংলা করুন"}
-                      </Button>
-                    </Tooltip>
-                  </div>
-                }
-                name="descriptionBn"
-                tooltip="বাংলায় বিস্তারিত বিবরণ"
-              >
-                <RichTextEditor placeholder="বাংলায় বিবরণ লিখুন..." height={400} />
               </Form.Item>
             </div>
           </div>

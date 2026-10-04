@@ -7,12 +7,10 @@ import {
   Row,
   Select,
   Switch,
-  Tooltip,
 } from "antd";
-import { ArrowLeft, Languages, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 
 import LangInput from "../../components/Common/LangInput";
 import PageHeader from "../../components/Common/PageHeader";
@@ -21,10 +19,6 @@ import RichTextEditor from "../../components/Common/RichEditor/RichTextEditor";
 import UploadMedia from "../../components/shared/UploadMedia";
 import { useGetBlogCategoriesQuery } from "../../redux/features/blog/blogApi";
 import { mediaSrc } from "../../utils/mediaSrc";
-import {
-  isEmptyRichText,
-  translateRichTextToBangla,
-} from "../../utils/richText";
 
 interface Props {
   /** Undefined when writing a new one. */
@@ -53,8 +47,6 @@ const META_DESCRIPTION_MAX = 160;
 const BlogForm = ({ initial, saving, onSubmit, heading, submitLabel }: Props) => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
-  const [translatingBody, setTranslatingBody] = useState(false);
-
   const { data: categories = [] } = useGetBlogCategoriesQuery({});
 
   useEffect(() => {
@@ -68,23 +60,6 @@ const BlogForm = ({ initial, saving, onSubmit, heading, submitLabel }: Props) =>
       thumbnailUrl: mediaSrc(initial.thumbnail),
     });
   }, [initial, form]);
-
-  const handleTranslateBody = async () => {
-    const enText = form.getFieldValue("content");
-    if (isEmptyRichText(enText)) {
-      toast.info("অনুবাদের জন্য আগে ইংরেজিতে লেখাটি (English body) লিখুন");
-      return;
-    }
-    setTranslatingBody(true);
-    try {
-      form.setFieldsValue({ contentBn: await translateRichTextToBangla(enText) });
-      toast.success("লেখাটি বাংলায় রূপান্তর করা হয়েছে!");
-    } catch {
-      toast.error("অনুবাদ করতে সমস্যা হয়েছে");
-    } finally {
-      setTranslatingBody(false);
-    }
-  };
 
   const [submitting, setSubmitting] = useState(false);
   const isSaving = saving || submitting;
@@ -164,28 +139,12 @@ const BlogForm = ({ initial, saving, onSubmit, heading, submitLabel }: Props) =>
               </Form.Item>
             </Col>
 
-            <Col xs={24} md={16}>
-              <LangInput
-                label="Title (Bangla)"
-                name="titleBn"
-                lang="bn"
-                sourceFieldName="title"
-                form={form}
-                placeholder="বাংলা শিরোনাম"
-              />
-            </Col>
-
             <Col xs={24} md={12}>
               <Form.Item
                 label="Excerpt"
                 name="excerpt"
                 tooltip="The card summary. Written, not truncated from the body."
               >
-                <Input.TextArea autoSize={{ minRows: 3 }} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item label="Excerpt (Bangla)" name="excerptBn">
                 <Input.TextArea autoSize={{ minRows: 3 }} />
               </Form.Item>
             </Col>
@@ -200,34 +159,6 @@ const BlogForm = ({ initial, saving, onSubmit, heading, submitLabel }: Props) =>
             />
           </Form.Item>
 
-          <Form.Item
-            label={
-              <div className="flex w-full items-center justify-between gap-2">
-                <span>Body (Bangla)</span>
-                <Tooltip title="ইংরেজিতে লেখা থেকে বাংলায় রূপান্তর করুন">
-                  <Button
-                    type="link"
-                    size="small"
-                    className="!h-auto !px-1 !text-xs flex shrink-0 items-center gap-1 whitespace-nowrap"
-                    onClick={handleTranslateBody}
-                    loading={translatingBody}
-                    icon={
-                      translatingBody ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Languages className="h-3.5 w-3.5" />
-                      )
-                    }
-                  >
-                    {translatingBody ? "রূপান্তর হচ্ছে..." : "বাংলা করুন"}
-                  </Button>
-                </Tooltip>
-              </div>
-            }
-            name="contentBn"
-          >
-            <RichTextEditor placeholder="বাংলায় লিখুন..." height={520} />
-          </Form.Item>
         </Card>
 
         <Card title="Images">
@@ -290,32 +221,8 @@ const BlogForm = ({ initial, saving, onSubmit, heading, submitLabel }: Props) =>
             </Col>
             <Col xs={24} md={12}>
               <Form.Item
-                label="Meta title (Bangla)"
-                name="metaTitleBn"
-                rules={[{ max: META_TITLE_MAX, message: `Under ${META_TITLE_MAX} characters` }]}
-              >
-                <Input showCount maxLength={META_TITLE_MAX} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
                 label="Meta description"
                 name="metaDescription"
-                rules={[
-                  { max: META_DESCRIPTION_MAX, message: `Under ${META_DESCRIPTION_MAX} characters` },
-                ]}
-              >
-                <Input.TextArea
-                  showCount
-                  maxLength={META_DESCRIPTION_MAX}
-                  autoSize={{ minRows: 2 }}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                label="Meta description (Bangla)"
-                name="metaDescriptionBn"
                 rules={[
                   { max: META_DESCRIPTION_MAX, message: `Under ${META_DESCRIPTION_MAX} characters` },
                 ]}

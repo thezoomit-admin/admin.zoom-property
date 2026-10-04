@@ -68,15 +68,6 @@ const AgentModal = ({ open, setOpen, editing, setEditing }: any) => {
             required
             placeholder="John Doe"
           />
-          <LangInput
-            name="nameBn"
-            label="Name (Bengali) - Auto translated"
-            lang="bn"
-            sourceFieldName="name"
-            form={form}
-            placeholder="জন ডো"
-          />
-
           <Form.Item name="phone" label="Phone Number">
             <Input placeholder="+8801XXXXXXXXX" />
           </Form.Item>

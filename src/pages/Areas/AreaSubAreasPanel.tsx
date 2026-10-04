@@ -159,9 +159,6 @@ const AreaSubAreasPanel = ({
             )}
             <div className="min-w-0">
               <div className="font-medium text-gray-900">{r.name}</div>
-              {r.nameBn ? (
-                <div className="text-xs text-gray-500">{r.nameBn}</div>
-              ) : null}
             </div>
           </div>
         );
@@ -275,25 +272,10 @@ const AreaSubAreasPanel = ({
             placeholder="e.g. Town Hall"
           />
           <LangInput
-            label="Name (Bangla)"
-            name="nameBn"
-            lang="bn"
-            sourceFieldName="name"
-            form={form}
-            placeholder="যেমন: টাউন হল"
-          />
-          <LangInput
             label="Tagline (English)"
             name="tagline"
             lang="en"
             placeholder="Short line under the name"
-          />
-          <LangInput
-            label="Tagline (Bangla)"
-            name="taglineBn"
-            lang="bn"
-            sourceFieldName="tagline"
-            form={form}
           />
           <Form.Item label="Photo" name="imageUrl">
             <UploadMedia

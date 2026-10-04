@@ -20,9 +20,7 @@ import PageHeader from "../../components/Common/PageHeader";
 import PageMeta from "../../components/Common/PageMeta";
 import RichTextEditor from "../../components/Common/RichEditor/RichTextEditor";
 import UploadMedia from "../../components/shared/UploadMedia";
-import { useGetAgentsQuery } from "../../redux/features/agent/agentApi";
 import { useGetAreasQuery } from "../../redux/features/area/areaApi";
-import { useGetSubAreasQuery } from "../../redux/features/subArea/subAreaApi";
 import { normalizeUrl, urlRule } from "../../utils/normalizeUrl";
 import { mediaSrc } from "../../utils/mediaSrc";
 import { isEmptyRichText } from "../../utils/richText";
@@ -67,12 +65,6 @@ const ProjectForm = ({
   const navigate = useNavigate();
 
   const { data: areaData } = useGetAreasQuery({ limit: 300, activeOnly: true });
-  const { data: agentData } = useGetAgentsQuery({ limit: 300 });
-  const selectedAreaId = Form.useWatch("area", form);
-  const { data: subAreaData } = useGetSubAreasQuery(
-    { area: selectedAreaId, limit: 200, activeOnly: true, sort: "order" },
-    { skip: !selectedAreaId },
-  );
 
   useEffect(() => {
     if (!initial) return;
@@ -89,8 +81,6 @@ const ProjectForm = ({
         ...initial,
         features,
         area: initial.area?._id ?? initial.area,
-        subArea: initial.subArea?._id ?? initial.subArea,
-        agent: initial.agent?._id ?? initial.agent,
         coverImage: initial.coverImage?._id ?? initial.coverImage,
         coverImageUrl: mediaSrc(initial.coverImage),
         images: (initial.images || []).map((i: any) => i?._id ?? i),
@@ -99,14 +89,12 @@ const ProjectForm = ({
           ? dayjs(initial.lastInspected)
           : undefined,
         specs: {
-          heroImage: initial.specs?.heroImage?._id ?? initial.specs?.heroImage,
           descriptions: initial.specs?.descriptions?.length
             ? initial.specs.descriptions
             : initial.specs?.description
               ? [{ title: "Specifications", description: initial.specs.description }]
               : createDefaultSpecifications(),
         },
-        specsHeroImageUrl: mediaSrc(initial.specs?.heroImage),
         video: {
           ...initial.video,
           poster: initial.video?.poster?._id ?? initial.video?.poster,
@@ -124,10 +112,15 @@ const ProjectForm = ({
       const rest = { ...values };
       delete rest.coverImageUrl;
       delete rest.imageUrls;
-      delete rest.specsHeroImageUrl;
       delete rest.videoPosterUrl;
       delete rest.description;
       delete rest.descriptionBn;
+      delete rest.milestones;
+      delete rest.agent;
+      delete rest.featured;
+      delete rest.isHome;
+      delete rest.isFooter;
+      delete rest.cctvStreamActive;
 
       const featuresToSubmit = (rest.features || []).map((f: any) => {
         const restFeature = { ...f };
@@ -143,7 +136,10 @@ const ProjectForm = ({
           : undefined,
         mapUrl: normalizeUrl(values.mapUrl),
         specs: {
-          heroImage: rest.specs?.heroImage || null,
+          heroImage:
+            initial?.specs?.heroImage?._id ??
+            initial?.specs?.heroImage ??
+            null,
           descriptions: (rest.specs?.descriptions || [])
             .filter((item: Record<string, string>) => hasSpecificationContent(item))
             .map((item: any) => ({
@@ -191,10 +187,6 @@ const ProjectForm = ({
           city: "Dhaka",
           stage: "Planning",
           isActive: true,
-          featured: false,
-          isHome: false,
-          isFooter: false,
-          cctvStreamActive: false,
           units: 0,
           unitsLeft: 0,
           specs: { descriptions: createDefaultSpecifications() },
@@ -206,10 +198,10 @@ const ProjectForm = ({
             <div className="space-y-4">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
-                  The Basics (মৌলিক তথ্য)
+                  The Basics
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Project name, developer profile, area and city location
+                  Project name, area and city location
                 </p>
               </div>
 
@@ -224,22 +216,6 @@ const ProjectForm = ({
                   />
                 </Col>
                 <Col xs={24} md={12}>
-                  <LangInput
-                    label="Name (Bangla)"
-                    name="nameBn"
-                    lang="bn"
-                    sourceFieldName="name"
-                    form={form}
-                    placeholder="প্রজেক্টের নাম"
-                  />
-                </Col>
-
-                <Col xs={24} md={8}>
-                  <Form.Item label="Developer" name="developer">
-                    <Input placeholder="Developer company name" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={8}>
                   <Form.Item
                     label="Area"
                     name="area"
@@ -253,34 +229,10 @@ const ProjectForm = ({
                         value: a._id,
                         label: a.name,
                       }))}
-                      onChange={() => form.setFieldValue("subArea", undefined)}
                     />
                   </Form.Item>
                 </Col>
-                <Col xs={24} md={8}>
-                  <Form.Item
-                    label="Sub-area"
-                    name="subArea"
-                    tooltip="Optional pocket inside the area (shown after the lead form on the website)."
-                  >
-                    <Select
-                      allowClear
-                      showSearch
-                      optionFilterProp="label"
-                      placeholder={
-                        selectedAreaId
-                          ? "Select a sub-area"
-                          : "Pick an area first"
-                      }
-                      disabled={!selectedAreaId}
-                      options={(subAreaData?.result || []).map((s: any) => ({
-                        value: s._id,
-                        label: s.name,
-                      }))}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={8}>
+                <Col xs={24} md={12}>
                   <Form.Item label="City" name="city">
                     <Input placeholder="Dhaka" />
                   </Form.Item>
@@ -349,109 +301,13 @@ const ProjectForm = ({
                 </Col>
               </Row>
 
-              {/* The build programme. Each line carries its share of the whole, and
-                  the ticked ones add up to what the site reports. */}
-              <div className="pt-2">
-                <Form.List name="milestones">
-                  {(fields, { add, remove }) => (
-                    <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-4">
-                      <div className="mb-3 flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-semibold text-foreground">
-                            Build Programme & Milestones
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Progress % is automatically calculated from completed milestones
-                          </p>
-                        </div>
-                        <Button
-                          size="small"
-                          type="dashed"
-                          icon={<Plus className="h-3.5 w-3.5" />}
-                          onClick={() => add({ percent: 10, completed: false })}
-                        >
-                          Add milestone
-                        </Button>
-                      </div>
-
-                      {fields.length === 0 && (
-                        <p className="py-2 text-xs text-muted-foreground">
-                          No milestones yet — progress stays at 0%.
-                        </p>
-                      )}
-
-                      {fields.map((field) => (
-                        <Row
-                          key={field.key}
-                          gutter={8}
-                          align="middle"
-                          className="mb-2"
-                        >
-                          <Col xs={24} md={11}>
-                            <Form.Item
-                              {...field}
-                              key={`${field.key}-label`}
-                              name={[field.name, "label"]}
-                              rules={[{ required: true, message: "Name it" }]}
-                              className="!mb-1"
-                            >
-                              <Input placeholder="Foundation complete" />
-                            </Form.Item>
-                          </Col>
-                          <Col xs={12} md={7}>
-                            <Form.Item
-                              key={`${field.key}-labelBn`}
-                              name={[field.name, "labelBn"]}
-                              className="!mb-1"
-                            >
-                              <Input placeholder="বাংলা" />
-                            </Form.Item>
-                          </Col>
-                          <Col xs={6} md={3}>
-                            <Form.Item
-                              key={`${field.key}-percent`}
-                              name={[field.name, "percent"]}
-                              className="!mb-1"
-                            >
-                              <InputNumber
-                                className="!w-full"
-                                min={0}
-                                max={100}
-                                addonAfter="%"
-                              />
-                            </Form.Item>
-                          </Col>
-                          <Col xs={4} md={2}>
-                            <Form.Item
-                              key={`${field.key}-completed`}
-                              name={[field.name, "completed"]}
-                              valuePropName="checked"
-                              className="!mb-1"
-                            >
-                              <Switch size="small" />
-                            </Form.Item>
-                          </Col>
-                          <Col xs={2} md={1}>
-                            <Button
-                              type="text"
-                              danger
-                              icon={<Trash2 className="h-4 w-4" />}
-                              onClick={() => remove(field.name)}
-                            />
-                          </Col>
-                        </Row>
-                      ))}
-                    </div>
-                  )}
-                </Form.List>
-              </div>
             </div>
 
             {/* 2.5 Features (Dynamic Sections) */}
             <div className="space-y-4 pt-8">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
-                  Project Features (প্রজেক্ট ফিচারসমূহ)
+                  Project Features
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   Dynamic feature sections (e.g. Building, Smart Home, Security) shown on the details page.
@@ -484,17 +340,6 @@ const ProjectForm = ({
                               </Form.Item>
                             </Col>
                             <Col xs={24} md={12}>
-                               <Form.Item
-                                {...field}
-                                name={[field.name, "eyebrowBn"]}
-                                label="Section Label / Eyebrow (Bangla)"
-                                className="!mb-4"
-                              >
-                                <Input placeholder="e.g. বহিরাঙ্গন" />
-                              </Form.Item>
-                            </Col>
-                            
-                            <Col xs={24} md={12}>
                               <Form.Item
                                 {...field}
                                 name={[field.name, "title"]}
@@ -505,17 +350,6 @@ const ProjectForm = ({
                                 <Input placeholder="e.g. Modern Architecture" />
                               </Form.Item>
                             </Col>
-                            <Col xs={24} md={12}>
-                              <Form.Item
-                                {...field}
-                                name={[field.name, "titleBn"]}
-                                label="Title (Bangla)"
-                                className="!mb-4"
-                              >
-                                <Input placeholder="e.g. আধুনিক স্থাপত্য" />
-                              </Form.Item>
-                            </Col>
-                            
                             <Col xs={24}>
                               <Form.Item
                                 {...field}
@@ -526,17 +360,6 @@ const ProjectForm = ({
                                 <RichTextEditor placeholder="Feature description in English..." height={400} />
                               </Form.Item>
                             </Col>
-                            <Col xs={24}>
-                              <Form.Item
-                                {...field}
-                                name={[field.name, "descriptionBn"]}
-                                label="Description (Bangla)"
-                                className="!mb-4"
-                              >
-                                <RichTextEditor placeholder="বাংলায় ফিচার বিবরণ..." height={400} />
-                              </Form.Item>
-                            </Col>
-                            
                             <Col xs={24} md={8}>
                               <Form.Item
                                 label="Feature Image"
@@ -573,7 +396,7 @@ const ProjectForm = ({
             <div className="space-y-4 pt-8">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
-                  Media & Visuals (ছবি ও গ্যালারি)
+                  Media & Visuals
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   Upload project hero cover image and architectural gallery photos
@@ -617,25 +440,13 @@ const ProjectForm = ({
             <div className="space-y-4 pt-8">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
-                  Specs Tab (স্পেসিফিকেশন)
+                  Specifications
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   Add titled specification sections shown under the "Specs" tab on the project page.
                 </p>
               </div>
 
-              <Form.Item
-                label="Specs hero image"
-                tooltip={`Banner at the top of the Specs tab. ${BANNER_SIZE_HINT}`}
-                extra={BANNER_SIZE_HINT}
-              >
-                <UploadMedia
-                  form={form}
-                  fieldPath="specsHeroImageUrl"
-                  idFieldPath={["specs", "heroImage"]}
-                  type="image"
-                />
-              </Form.Item>
               <Form.List name={["specs", "descriptions"]}>
                 {(fields, { add, remove }) => (
                   <div className="space-y-4">
@@ -643,19 +454,11 @@ const ProjectForm = ({
                       <Card
                         key={field.key}
                         size="small"
-                        className={`!overflow-hidden !rounded-xl !transition-colors !duration-200 ${
-                          index % 2 === 0
-                            ? "!border-emerald-200 !bg-emerald-50/50 hover:!border-emerald-300"
-                            : "!border-sky-200 !bg-sky-50/50 hover:!border-sky-300"
-                        }`}
+                        className="!overflow-hidden !rounded-xl !border-gray-300 !bg-gray-50 !transition-colors !duration-200 hover:!border-gray-400"
                         title={
                           <span className="flex items-center gap-2.5 py-1">
                             <span
-                              className={`grid size-7 place-items-center rounded-full text-xs font-bold ${
-                                index % 2 === 0
-                                  ? "bg-emerald-100 text-emerald-800"
-                                  : "bg-sky-100 text-sky-800"
-                              }`}
+                              className="grid size-7 place-items-center rounded-full bg-gray-200 text-xs font-bold text-gray-700"
                             >
                               {index + 1}
                             </span>
@@ -705,14 +508,6 @@ const ProjectForm = ({
                               <Input placeholder="e.g. Dimensions" />
                             </Form.Item>
                           </Col>
-                          <Col xs={24} md={12}>
-                            <Form.Item
-                              name={[field.name, "titleBn"]}
-                              label="Title (Bangla)"
-                            >
-                              <Input placeholder="যেমন: পরিমাপ" />
-                            </Form.Item>
-                          </Col>
                         </Row>
                         <Form.Item
                           name={[field.name, "description"]}
@@ -744,15 +539,6 @@ const ProjectForm = ({
                             height={440}
                           />
                         </Form.Item>
-                        <Form.Item
-                          name={[field.name, "descriptionBn"]}
-                          label="Description (Bangla)"
-                        >
-                          <RichTextEditor
-                            placeholder="বাংলায় বিবরণ লিখুন..."
-                            height={440}
-                          />
-                        </Form.Item>
                       </Card>
                     ))}
                     <Button
@@ -762,9 +548,7 @@ const ProjectForm = ({
                       onClick={() =>
                         add({
                           title: "",
-                          titleBn: "",
                           description: "",
-                          descriptionBn: "",
                         })
                       }
                       block
@@ -780,7 +564,7 @@ const ProjectForm = ({
             <div className="space-y-4 pt-8">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
-                  Site Walkthrough Video (ভিডিও)
+                  Site Walkthrough Video
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   YouTube video shown in the dark band below the project features
@@ -795,15 +579,6 @@ const ProjectForm = ({
                     tooltip="Heading shown above the video player"
                   >
                     <Input placeholder="e.g. Site Walkthrough — Al Zahra" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item
-                    label="Video Title (Bangla)"
-                    name={["video", "titleBn"]}
-                    tooltip="বাংলায় শিরোনাম"
-                  >
-                    <Input placeholder="যেমন: সাইট পরিদর্শন — আল জাহরা" />
                   </Form.Item>
                 </Col>
               </Row>
@@ -844,87 +619,22 @@ const ProjectForm = ({
               </Form.Item>
             </div>
 
-            {/* 7. Publishing & Settings */}
+            {/* 7. Activity */}
             <div className="space-y-4 pt-8">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
-                  Publishing & Visibility Settings (প্রচার ও সেটিংস)
+                  Activity
                 </h3>
-                <p className="text-xs text-muted-foreground">
-                  Configure featured badges, homepage exposure, live CCTV and active status
-                </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                <Form.Item
-                  label="Agent / Consultant"
-                  name="agent"
-                  tooltip="The consultant associated with this project."
-                  className="!mb-0"
-                >
-                  <Select
-                    allowClear
-                    showSearch
-                    optionFilterProp="label"
-                    placeholder="Select an agent"
-                    options={(agentData?.result || []).map((a: any) => ({
-                      value: a._id,
-                      label: `${a.name} (${a.role})`,
-                    }))}
-                  />
+              <div className="max-w-[280px] rounded-lg border border-gray-200 bg-gray-50/50 p-4 flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-foreground text-sm">Active</p>
+                  <p className="text-xs text-muted-foreground">Show in portal</p>
+                </div>
+                <Form.Item name="isActive" valuePropName="checked" noStyle>
+                  <Switch />
                 </Form.Item>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-4 flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-foreground text-sm">Active</p>
-                    <p className="text-xs text-muted-foreground">Show in portal</p>
-                  </div>
-                  <Form.Item name="isActive" valuePropName="checked" noStyle>
-                    <Switch />
-                  </Form.Item>
-                </div>
-
-                <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-4 flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-foreground text-sm">Featured</p>
-                    <p className="text-xs text-muted-foreground">Highlight badge</p>
-                  </div>
-                  <Form.Item name="featured" valuePropName="checked" noStyle>
-                    <Switch />
-                  </Form.Item>
-                </div>
-
-                <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-4 flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-foreground text-sm">On Home Page</p>
-                    <p className="text-xs text-muted-foreground">Home showcase</p>
-                  </div>
-                  <Form.Item name="isHome" valuePropName="checked" noStyle>
-                    <Switch />
-                  </Form.Item>
-                </div>
-
-                <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-4 flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-foreground text-sm">In Footer</p>
-                    <p className="text-xs text-muted-foreground">Show in footer list</p>
-                  </div>
-                  <Form.Item name="isFooter" valuePropName="checked" noStyle>
-                    <Switch />
-                  </Form.Item>
-                </div>
-
-                <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-4 flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-foreground text-sm">CCTV Live</p>
-                    <p className="text-xs text-muted-foreground">Stream active</p>
-                  </div>
-                  <Form.Item name="cctvStreamActive" valuePropName="checked" noStyle>
-                    <Switch />
-                  </Form.Item>
-                </div>
               </div>
             </div>
           </div>
