@@ -9,13 +9,11 @@ import {
   Row,
   Select,
   Switch,
-  Tooltip,
 } from "antd";
 import dayjs from "dayjs";
-import { ArrowLeft, Languages, Loader2, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 
 import LangInput from "../../components/Common/LangInput";
 import PageHeader from "../../components/Common/PageHeader";
@@ -27,12 +25,7 @@ import { useGetAreasQuery } from "../../redux/features/area/areaApi";
 import { useGetSubAreasQuery } from "../../redux/features/subArea/subAreaApi";
 import { normalizeUrl, urlRule } from "../../utils/normalizeUrl";
 import { mediaSrc } from "../../utils/mediaSrc";
-import {
-  isEmptyRichText,
-  normalizeDescriptionForEditor,
-  toDescriptionArray,
-  translateRichTextToBangla,
-} from "../../utils/richText";
+import { isEmptyRichText } from "../../utils/richText";
 import { BANNER_SIZE_HINT, featureSizeHint, STAGES } from "./projectMeta";
 
 interface Props {
@@ -43,6 +36,22 @@ interface Props {
   heading: string;
   submitLabel: string;
 }
+
+const createDefaultSpecifications = () =>
+  Array.from({ length: 5 }, () => ({
+    title: "",
+    titleBn: "",
+    description: "",
+    descriptionBn: "",
+  }));
+
+const hasSpecificationContent = (item: Record<string, string>) =>
+  Boolean(
+    item.title?.trim() ||
+      item.titleBn?.trim() ||
+      !isEmptyRichText(item.description) ||
+      !isEmptyRichText(item.descriptionBn),
+  );
 
 /**
  * One form for creating and editing a project development.
@@ -56,7 +65,6 @@ const ProjectForm = ({
 }: Props) => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
-  const [translatingDescBn, setTranslatingDescBn] = useState(false);
 
   const { data: areaData } = useGetAreasQuery({ limit: 300, activeOnly: true });
   const { data: agentData } = useGetAgentsQuery({ limit: 300 });
@@ -66,27 +74,9 @@ const ProjectForm = ({
     { skip: !selectedAreaId },
   );
 
-  const handleTranslateDescription = async () => {
-    const enText = form.getFieldValue("description");
-    if (isEmptyRichText(enText)) {
-      toast.info("অনুবাদের জন্য আগে ইংরেজিতে বিবরণ (English description) লিখুন");
-      return;
-    }
-    setTranslatingDescBn(true);
-    try {
-      const bnText = await translateRichTextToBangla(enText);
-      form.setFieldsValue({ descriptionBn: bnText });
-      toast.success("বিবরণ বাংলায় রূপান্তর করা হয়েছে!");
-    } catch {
-      toast.error("অনুবাদ করতে সমস্যা হয়েছে");
-    } finally {
-      setTranslatingDescBn(false);
-    }
-  };
-
   useEffect(() => {
     if (!initial) return;
-      const features = (initial.features || []).map((f: any, i: number) => {
+      const features = (initial.features || []).map((f: any) => {
         const previewUrl = mediaSrc(f.image);
         return {
           ...f,
@@ -108,11 +98,13 @@ const ProjectForm = ({
         lastInspected: initial.lastInspected
           ? dayjs(initial.lastInspected)
           : undefined,
-        description: normalizeDescriptionForEditor(initial.description),
-        descriptionBn: normalizeDescriptionForEditor(initial.descriptionBn),
         specs: {
           heroImage: initial.specs?.heroImage?._id ?? initial.specs?.heroImage,
-          description: initial.specs?.description || "",
+          descriptions: initial.specs?.descriptions?.length
+            ? initial.specs.descriptions
+            : initial.specs?.description
+              ? [{ title: "Specifications", description: initial.specs.description }]
+              : createDefaultSpecifications(),
         },
         specsHeroImageUrl: mediaSrc(initial.specs?.heroImage),
         video: {
@@ -129,10 +121,17 @@ const ProjectForm = ({
   const handleFinish = async (values: any) => {
     setSubmitting(true);
     try {
-      const { coverImageUrl, imageUrls, specsHeroImageUrl, videoPosterUrl, ...rest } = values;
-      
+      const rest = { ...values };
+      delete rest.coverImageUrl;
+      delete rest.imageUrls;
+      delete rest.specsHeroImageUrl;
+      delete rest.videoPosterUrl;
+      delete rest.description;
+      delete rest.descriptionBn;
+
       const featuresToSubmit = (rest.features || []).map((f: any) => {
-        const { imageUrl, ...restFeature } = f;
+        const restFeature = { ...f };
+        delete restFeature.imageUrl;
         return restFeature;
       });
 
@@ -143,11 +142,16 @@ const ProjectForm = ({
           ? { ...rest.video, youtubeUrl: normalizeUrl(rest.video.youtubeUrl) }
           : undefined,
         mapUrl: normalizeUrl(values.mapUrl),
-        description: toDescriptionArray(values.description),
-        descriptionBn: toDescriptionArray(values.descriptionBn),
         specs: {
           heroImage: rest.specs?.heroImage || null,
-          description: isEmptyRichText(rest.specs?.description) ? "" : rest.specs.description,
+          descriptions: (rest.specs?.descriptions || [])
+            .filter((item: Record<string, string>) => hasSpecificationContent(item))
+            .map((item: any) => ({
+              ...item,
+              description: isEmptyRichText(item.description) ? "" : item.description,
+              descriptionBn: isEmptyRichText(item.descriptionBn) ? "" : item.descriptionBn,
+            })),
+          description: "",
         },
         lastInspected: values.lastInspected
           ? values.lastInspected.toISOString()
@@ -193,6 +197,7 @@ const ProjectForm = ({
           cctvStreamActive: false,
           units: 0,
           unitsLeft: 0,
+          specs: { descriptions: createDefaultSpecifications() },
         }}
       >
         <Card className="border border-gray-300 rounded-lg bg-white shadow-xs mb-6">
@@ -295,15 +300,6 @@ const ProjectForm = ({
 
             {/* 2. The Build & Milestones */}
             <div className="space-y-4 pt-8">
-              <div>
-                <h3 className="text-base font-semibold text-foreground">
-                  The Build & Specifications (নির্মাণ অগ্রগতি ও স্পেসিফিকেশন)
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Construction stage, timeline, units, pricing and milestone progress
-                </p>
-              </div>
-
               <Row gutter={16}>
                 <Col xs={12} md={6}>
                   <Form.Item label="Stage" name="stage">
@@ -617,66 +613,14 @@ const ProjectForm = ({
               </Row>
             </div>
 
-            {/* 4. Description */}
-            <div className="space-y-4 pt-8">
-              <div>
-                <h3 className="text-base font-semibold text-foreground">
-                  Detailed Description (বিস্তারিত বিবরণ)
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Comprehensive development overview in English and Bangla
-                </p>
-              </div>
-
-              <Form.Item
-                label="Description (English)"
-                name="description"
-                tooltip="Detailed project description with rich formatting."
-              >
-                <RichTextEditor
-                  placeholder="Enter description in English..."
-                  height={400}
-                />
-              </Form.Item>
-              <Form.Item
-                label={
-                  <div className="flex items-center justify-between w-full gap-2">
-                    <span>Description (Bangla)</span>
-                    <Tooltip title="ইংরেজিতে লেখা বিবরণ থেকে বাংলায় রূপান্তর করুন">
-                      <Button
-                        type="link"
-                        size="small"
-                        className="!px-1 !h-auto !text-xs flex items-center gap-1 text-primary-600 hover:text-primary-700 shrink-0 whitespace-nowrap"
-                        onClick={handleTranslateDescription}
-                        loading={translatingDescBn}
-                        icon={
-                          translatingDescBn ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <Languages className="w-3.5 h-3.5" />
-                          )
-                        }
-                      >
-                        {translatingDescBn ? "রূপান্তর হচ্ছে..." : "বাংলা করুন"}
-                      </Button>
-                    </Tooltip>
-                  </div>
-                }
-                name="descriptionBn"
-                tooltip="বাংলায় বিস্তারিত বিবরণ"
-              >
-                <RichTextEditor placeholder="বাংলায় বিবরণ লিখুন..." height={400} />
-              </Form.Item>
-            </div>
-
-            {/* 5. Specs tab */}
+            {/* 4. Specs tab */}
             <div className="space-y-4 pt-8">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
                   Specs Tab (স্পেসিফিকেশন)
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Hero image and rich-text write-up shown under the "Specs" tab on the project page
+                  Add titled specification sections shown under the "Specs" tab on the project page.
                 </p>
               </div>
 
@@ -692,9 +636,144 @@ const ProjectForm = ({
                   type="image"
                 />
               </Form.Item>
-              <Form.Item label="Specs description" name={["specs", "description"]}>
-                <RichTextEditor placeholder="Specifications..." height={400} />
-              </Form.Item>
+              <Form.List name={["specs", "descriptions"]}>
+                {(fields, { add, remove }) => (
+                  <div className="space-y-4">
+                    {fields.map((field, index) => (
+                      <Card
+                        key={field.key}
+                        size="small"
+                        className={`!overflow-hidden !rounded-xl !transition-colors !duration-200 ${
+                          index % 2 === 0
+                            ? "!border-emerald-200 !bg-emerald-50/50 hover:!border-emerald-300"
+                            : "!border-sky-200 !bg-sky-50/50 hover:!border-sky-300"
+                        }`}
+                        title={
+                          <span className="flex items-center gap-2.5 py-1">
+                            <span
+                              className={`grid size-7 place-items-center rounded-full text-xs font-bold ${
+                                index % 2 === 0
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : "bg-sky-100 text-sky-800"
+                              }`}
+                            >
+                              {index + 1}
+                            </span>
+                            <span className="font-semibold text-gray-800">
+                              Specification section
+                            </span>
+                          </span>
+                        }
+                        extra={
+                          <Button
+                            type="text"
+                            danger
+                            icon={<Trash2 className="h-4 w-4" />}
+                            onClick={() => remove(field.name)}
+                          >
+                            Remove
+                          </Button>
+                        }
+                      >
+                        <Row gutter={16}>
+                          <Col xs={24} md={12}>
+                            <Form.Item
+                              name={[field.name, "title"]}
+                              label="Title (English)"
+                              rules={[
+                                {
+                                  validator: (_, value) => {
+                                    const item =
+                                      form.getFieldValue([
+                                        "specs",
+                                        "descriptions",
+                                        field.name,
+                                      ]) || {};
+                                    if (
+                                      !hasSpecificationContent(item) ||
+                                      value?.trim()
+                                    ) {
+                                      return Promise.resolve();
+                                    }
+                                    return Promise.reject(
+                                      new Error("Enter a section title"),
+                                    );
+                                  },
+                                },
+                              ]}
+                            >
+                              <Input placeholder="e.g. Dimensions" />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24} md={12}>
+                            <Form.Item
+                              name={[field.name, "titleBn"]}
+                              label="Title (Bangla)"
+                            >
+                              <Input placeholder="যেমন: পরিমাপ" />
+                            </Form.Item>
+                          </Col>
+                        </Row>
+                        <Form.Item
+                          name={[field.name, "description"]}
+                          label="Description (English)"
+                          rules={[
+                            {
+                              validator: (_, value) => {
+                                const item =
+                                  form.getFieldValue([
+                                    "specs",
+                                    "descriptions",
+                                    field.name,
+                                  ]) || {};
+                                if (
+                                  !hasSpecificationContent(item) ||
+                                  !isEmptyRichText(value)
+                                ) {
+                                  return Promise.resolve();
+                                }
+                                return Promise.reject(
+                                  new Error("Enter a description"),
+                                );
+                              },
+                            },
+                          ]}
+                        >
+                          <RichTextEditor
+                            placeholder="Add the specification details..."
+                            height={440}
+                          />
+                        </Form.Item>
+                        <Form.Item
+                          name={[field.name, "descriptionBn"]}
+                          label="Description (Bangla)"
+                        >
+                          <RichTextEditor
+                            placeholder="বাংলায় বিবরণ লিখুন..."
+                            height={440}
+                          />
+                        </Form.Item>
+                      </Card>
+                    ))}
+                    <Button
+                      type="dashed"
+                      icon={<Plus className="h-4 w-4" />}
+                      className="!h-12 !rounded-xl !border-primary/40 !bg-primary-50/40 !font-semibold !text-primary-700 transition-all duration-200 hover:!border-primary hover:!bg-primary-50 hover:!shadow-sm"
+                      onClick={() =>
+                        add({
+                          title: "",
+                          titleBn: "",
+                          description: "",
+                          descriptionBn: "",
+                        })
+                      }
+                      block
+                    >
+                      Add another specification section
+                    </Button>
+                  </div>
+                )}
+              </Form.List>
             </div>
 
             {/* 6. Video */}

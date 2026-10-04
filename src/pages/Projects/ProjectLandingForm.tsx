@@ -923,7 +923,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
             activeKey={activeTab}
             onChange={(key) => {
               setActiveTab(key as TabKey);
-              window.scrollTo({ top: 0, behavior: "smooth" });
+              window.scrollTo({ top: 0, behavior: "auto" });
             }}
             size="small"
             tabBarGutter={8}
