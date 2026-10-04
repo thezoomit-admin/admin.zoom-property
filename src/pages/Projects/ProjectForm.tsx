@@ -23,7 +23,11 @@ import UploadMedia from "../../components/shared/UploadMedia";
 import { useGetAreasQuery } from "../../redux/features/area/areaApi";
 import { normalizeUrl, urlRule } from "../../utils/normalizeUrl";
 import { mediaSrc } from "../../utils/mediaSrc";
-import { isEmptyRichText } from "../../utils/richText";
+import {
+  isEmptyRichText,
+  normalizeDescriptionForEditor,
+  toDescriptionArray,
+} from "../../utils/richText";
 import { BANNER_SIZE_HINT, featureSizeHint, STAGES } from "./projectMeta";
 
 interface Props {
@@ -79,6 +83,8 @@ const ProjectForm = ({
 
       form.setFieldsValue({
         ...initial,
+        description: normalizeDescriptionForEditor(initial.description),
+        descriptionBn: normalizeDescriptionForEditor(initial.descriptionBn),
         features,
         area: initial.area?._id ?? initial.area,
         coverImage: initial.coverImage?._id ?? initial.coverImage,
@@ -113,8 +119,6 @@ const ProjectForm = ({
       delete rest.coverImageUrl;
       delete rest.imageUrls;
       delete rest.videoPosterUrl;
-      delete rest.description;
-      delete rest.descriptionBn;
       delete rest.milestones;
       delete rest.agent;
       delete rest.featured;
@@ -130,6 +134,8 @@ const ProjectForm = ({
 
       await onSubmit({
         ...rest,
+        description: toDescriptionArray(values.description),
+        descriptionBn: toDescriptionArray(values.descriptionBn),
         features: featuresToSubmit,
         video: rest.video
           ? { ...rest.video, youtubeUrl: normalizeUrl(rest.video.youtubeUrl) }
@@ -245,6 +251,30 @@ const ProjectForm = ({
                     rules={[urlRule]}
                   >
                     <Input placeholder="https://www.google.com/maps/embed?pb=..." />
+                  </Form.Item>
+                </Col>
+                <Col xs={24}>
+                  <Form.Item
+                    label="Neighbourhood description (English)"
+                    name="description"
+                    tooltip="Shown beside the map in the Neighbourhood section."
+                  >
+                    <RichTextEditor
+                      placeholder="Describe the neighbourhood and nearby conveniences..."
+                      height={260}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col xs={24}>
+                  <Form.Item
+                    label="Neighbourhood description (Bangla)"
+                    name="descriptionBn"
+                    tooltip="Optional Bangla copy shown beside the map for Bangla visitors."
+                  >
+                    <RichTextEditor
+                      placeholder="বাংলায় এলাকার বিবরণ লিখুন..."
+                      height={260}
+                    />
                   </Form.Item>
                 </Col>
               </Row>
