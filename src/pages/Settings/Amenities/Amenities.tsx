@@ -92,7 +92,7 @@ const Amenities = () => {
     const q = search.trim().toLowerCase();
     if (!q) return rows;
     return rows.filter((r: any) =>
-      [r.name, r.nameBn, r.icon, r.description]
+      [r.name, r.icon, r.description]
         .filter(Boolean)
         .some((v: string) => v.toLowerCase().includes(q))
     );
@@ -142,13 +142,8 @@ const Amenities = () => {
       title: "Amenity",
       dataIndex: "name",
       key: "name",
-      render: (name: string, r: any) => (
-        <div>
-          <p className="font-medium text-secondary-800">{name}</p>
-          {r.nameBn && (
-            <p className="text-xs text-secondary-400">{r.nameBn}</p>
-          )}
-        </div>
+      render: (name: string) => (
+        <p className="font-medium text-secondary-800">{name}</p>
       ),
     },
     {
@@ -307,9 +302,6 @@ const Amenities = () => {
             rules={[{ required: true, message: "Name the amenity" }]}
           >
             <Input placeholder="Lift" />
-          </Form.Item>
-          <Form.Item label="Name (Bangla)" name="nameBn">
-            <Input placeholder="লিফট" />
           </Form.Item>
           <Form.Item
             label="Icon"

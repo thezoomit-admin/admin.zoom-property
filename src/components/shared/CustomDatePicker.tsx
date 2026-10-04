@@ -119,9 +119,6 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
       placeholder={["All time", "All time"]}
       suffixIcon={<Calendar className="h-4 w-4 text-gray-500" />}
       className="w-[260px]"
-      /* The page scrolls inside a smooth-scroll container. The panel is
-         portalled to the body and so sits outside it, which is what keeps the
-         wheel over the calendar from scrolling the page behind it. */
       popupClassName="[&_*]:!font-display"
     />
   );

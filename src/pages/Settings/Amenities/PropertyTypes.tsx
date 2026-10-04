@@ -14,7 +14,6 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 import PageHeader from "../../../components/Common/PageHeader";
-import LangInput from "../../../components/Common/LangInput";
 import PageMeta from "../../../components/Common/PageMeta";
 import PermissionGate from "../../../components/Common/PermissionGate";
 import OrderInputCell from "../../../components/shared/OrderInputCell";
@@ -136,13 +135,8 @@ const PropertyTypes = () => {
       title: "Property Type",
       dataIndex: "name",
       key: "name",
-      render: (name: string, r: any) => (
-        <div>
-          <p className="font-medium text-secondary-800">{name}</p>
-          {r.nameBn && (
-            <p className="text-xs text-secondary-400">{r.nameBn}</p>
-          )}
-        </div>
+      render: (name: string) => (
+        <p className="font-medium text-secondary-800">{name}</p>
       ),
     },
     {
@@ -304,14 +298,6 @@ const PropertyTypes = () => {
           >
             <Input placeholder="Apartments" />
           </Form.Item>
-          <LangInput
-            label="Label (Bangla)"
-            name="nameBn"
-            lang="bn"
-            placeholder="অ্যাপার্টমেন্ট"
-            sourceFieldName="name"
-            form={form}
-          />
           <Form.Item
             label="Icon"
             name="icon"

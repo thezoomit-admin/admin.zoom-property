@@ -14,7 +14,6 @@ import {
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
-import LangInput from "../../components/Common/LangInput";
 import UploadMedia from "../../components/shared/UploadMedia";
 import { normalizeUrl, urlRule } from "../../utils/normalizeUrl";
 import { useGetPropertiesQuery } from "../../redux/features/property/propertyApi";
@@ -230,15 +229,6 @@ const ReviewModal = ({ open, onClose, review }: Props) => {
               <Input />
             </Form.Item>
           </Col>
-          <Col xs={24} md={12}>
-            <LangInput
-              label="Client (Bangla)"
-              name="clientNameBn"
-              lang="bn"
-              sourceFieldName="clientName"
-              form={form}
-            />
-          </Col>
 
           {isText ? (
             <>
@@ -246,15 +236,6 @@ const ReviewModal = ({ open, onClose, review }: Props) => {
                 <Form.Item label="What they do" name="role">
                   <Input placeholder="Consultant, Dhaka" />
                 </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <LangInput
-                  label="What they do (Bangla)"
-                  name="roleBn"
-                  lang="bn"
-                  sourceFieldName="role"
-                  form={form}
-                />
               </Col>
             </>
           ) : null}
@@ -279,17 +260,6 @@ const ReviewModal = ({ open, onClose, review }: Props) => {
             >
               <Input.TextArea rows={isText ? 3 : 2} />
             </Form.Item>
-          </Col>
-          <Col xs={24}>
-            <LangInput
-              label={isText ? "Quote (Bangla)" : "Short description (Bangla)"}
-              name="quoteBn"
-              lang="bn"
-              sourceFieldName="quote"
-              form={form}
-              isTextArea
-              rows={2}
-            />
           </Col>
 
           {isText ? (
@@ -452,4 +422,3 @@ const ReviewModal = ({ open, onClose, review }: Props) => {
 };
 
 export default ReviewModal;
-

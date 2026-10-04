@@ -79,9 +79,6 @@ const BlogCategoriesModal = ({ open, onClose }: Props) => {
         >
           <Input placeholder="Market" />
         </Form.Item>
-        <Form.Item name="nameBn">
-          <Input placeholder="বাংলা" />
-        </Form.Item>
         <Button
           type="primary"
           htmlType="submit"

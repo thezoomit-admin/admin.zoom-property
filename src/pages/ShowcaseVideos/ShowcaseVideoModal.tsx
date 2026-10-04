@@ -98,32 +98,11 @@ const ShowcaseVideoModal = ({ open, onClose, video }: Props) => {
               placeholder="The Luminary Duplex - Grand Living Walkthrough"
             />
           </Col>
-          <Col xs={24} md={12}>
-            <LangInput
-              label="Title (Bangla)"
-              name="titleBn"
-              lang="bn"
-              sourceFieldName="title"
-              form={form}
-              placeholder="বাংলা শিরোনাম"
-            />
-          </Col>
 
           <Col xs={24} md={12}>
             <Form.Item label="Description" name="description">
               <Input.TextArea autoSize={{ minRows: 2 }} />
             </Form.Item>
-          </Col>
-          <Col xs={24} md={12}>
-            <LangInput
-              label="Description (Bangla)"
-              name="descriptionBn"
-              lang="bn"
-              sourceFieldName="description"
-              form={form}
-              isTextArea
-              rows={2}
-            />
           </Col>
 
           <Col xs={24} md={16}>
@@ -158,16 +137,6 @@ const ShowcaseVideoModal = ({ open, onClose, video }: Props) => {
               <Input placeholder="Penthouse Tour" />
             </Form.Item>
           </Col>
-          <Col xs={24} md={12}>
-            <LangInput
-              label="Category (Bangla)"
-              name="categoryBn"
-              lang="bn"
-              sourceFieldName="category"
-              form={form}
-              placeholder="পেন্টহাউস ট্যুর"
-            />
-          </Col>
 
           <Col xs={24} md={12}>
             <Form.Item label="Location" name="location">
@@ -182,16 +151,6 @@ const ShowcaseVideoModal = ({ open, onClose, video }: Props) => {
                 }))}
               />
             </Form.Item>
-          </Col>
-          <Col xs={24} md={12}>
-            <LangInput
-              label="Location (Bangla)"
-              name="locationBn"
-              lang="bn"
-              sourceFieldName="location"
-              form={form}
-              placeholder="গুলশান ২, ঢাকা"
-            />
           </Col>
 
           <Col xs={24} md={12}>

@@ -1,6 +1,5 @@
-import { Button, Col, Form, Input, InputNumber, Modal, Row, Switch, Tooltip } from "antd";
-import { Languages, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Button, Col, Form, Input, InputNumber, Modal, Row, Switch } from "antd";
+import { useEffect } from "react";
 import { toast } from "react-toastify";
 
 import LangInput from "../../components/Common/LangInput";
@@ -10,10 +9,6 @@ import {
   useCreateLandownerProjectMutation,
   useUpdateLandownerProjectMutation,
 } from "../../redux/features/landowner/landownerApi";
-import {
-  isEmptyRichText,
-  translateRichTextToBangla,
-} from "../../utils/richText";
 
 interface Props {
   open: boolean;
@@ -31,7 +26,6 @@ interface Props {
  */
 const LandownerProjectModal = ({ open, onClose, project }: Props) => {
   const [form] = Form.useForm();
-  const [translating, setTranslating] = useState(false);
   const [createProject, { isLoading: creating }] =
     useCreateLandownerProjectMutation();
   const [updateProject, { isLoading: updating }] =
@@ -47,25 +41,6 @@ const LandownerProjectModal = ({ open, onClose, project }: Props) => {
       });
     }
   }, [open, project, form]);
-
-  const handleTranslate = async () => {
-    const enText = form.getFieldValue("description");
-    if (isEmptyRichText(enText)) {
-      toast.info("অনুবাদের জন্য আগে ইংরেজিতে বিবরণ (English description) লিখুন");
-      return;
-    }
-    setTranslating(true);
-    try {
-      form.setFieldsValue({
-        descriptionBn: await translateRichTextToBangla(enText),
-      });
-      toast.success("বিবরণ বাংলায় রূপান্তর করা হয়েছে!");
-    } catch {
-      toast.error("অনুবাদ করতে সমস্যা হয়েছে");
-    } finally {
-      setTranslating(false);
-    }
-  };
 
   const onFinish = async (values: any) => {
     const { imageUrl, ...rest } = values;
@@ -107,16 +82,6 @@ const LandownerProjectModal = ({ open, onClose, project }: Props) => {
               lang="en"
               required
               placeholder="Why choose us as a partner for your land?"
-            />
-          </Col>
-          <Col xs={24} md={12}>
-            <LangInput
-              label="Title (Bangla)"
-              name="titleBn"
-              lang="bn"
-              sourceFieldName="title"
-              form={form}
-              placeholder="বাংলা শিরোনাম"
             />
           </Col>
 
@@ -171,36 +136,6 @@ const LandownerProjectModal = ({ open, onClose, project }: Props) => {
             </Form.Item>
           </Col>
 
-          <Col xs={24}>
-            <Form.Item
-              label={
-                <div className="flex w-full items-center justify-between gap-2">
-                  <span>Description (Bangla)</span>
-                  <Tooltip title="ইংরেজিতে লেখা বিবরণ থেকে বাংলায় রূপান্তর করুন">
-                    <Button
-                      type="link"
-                      size="small"
-                      className="!h-auto !px-1 !text-xs flex shrink-0 items-center gap-1 whitespace-nowrap"
-                      onClick={handleTranslate}
-                      loading={translating}
-                      icon={
-                        translating ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Languages className="h-3.5 w-3.5" />
-                        )
-                      }
-                    >
-                      {translating ? "রূপান্তর হচ্ছে..." : "বাংলা করুন"}
-                    </Button>
-                  </Tooltip>
-                </div>
-              }
-              name="descriptionBn"
-            >
-              <RichTextEditor placeholder="বাংলায় বিবরণ লিখুন..." height={500} />
-            </Form.Item>
-          </Col>
         </Row>
 
         <div className="flex justify-end gap-2">

@@ -1,19 +1,13 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import ForcePasswordChangeModal from "../components/Common/ForcePasswordChangeModal";
 import Header from "../components/Dashboard/Header";
 import Sidebar from "../components/Dashboard/Sidebar/Sidebar";
 import { useAccessDeniedNotice } from "../hooks/useAccessDeniedNotice";
-import { useSmoothScroll } from "../hooks/useSmoothScroll";
 
 const MainLayout = () => {
   // Explains the bounce when a guarded route sent someone here instead.
   useAccessDeniedNotice();
-  // The scrolling column and the thing inside it that gives it its height —
-  // Lenis needs both, and neither is the window here.
-  const scrollArea = useRef<HTMLDivElement | null>(null);
-  const scrollContent = useRef<HTMLDivElement | null>(null);
-  useSmoothScroll(scrollArea, scrollContent);
   /* Everybody who can sign in gets the sidebar — an agent's is simply the
      short version, narrowed in `mergeSidebarForPersona`. */
   const showSidebar = true;
@@ -62,18 +56,8 @@ const MainLayout = () => {
         {/* Main Content — min-w-0 lets the flex child actually shrink when the
             sidebar expands/collapses; overflow-x-hidden stops wide tables from
             pushing the layout out of alignment. */}
-        <div
-          ref={scrollArea}
-          className="relative flex flex-1 flex-col min-w-0 overflow-y-auto overflow-x-hidden transition-[width] duration-300 print:block print:overflow-visible"
-        >
-          {/* One child holding everything, so Lenis has a single element whose
-              height is the scrollable length. The header stays inside it and
-              stays sticky — Lenis moves the real scroll offset rather than
-              transforming this, so sticky still has something to stick to. */}
-          <div
-            ref={scrollContent}
-            className="flex min-w-0 flex-1 flex-col print:block"
-          >
+        <div className="relative flex flex-1 flex-col min-w-0 overflow-y-auto overflow-x-hidden transition-[width] duration-300 print:block print:overflow-visible">
+          <div className="flex min-w-0 flex-1 flex-col print:block">
             <div className="contents print:hidden">
               <Header />
             </div>

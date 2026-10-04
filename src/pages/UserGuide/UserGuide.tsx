@@ -75,7 +75,7 @@ const UserGuide: React.FC = () => {
 
   const jump = (id: string) => {
     document.getElementById(id)?.scrollIntoView({
-      behavior: "smooth",
+      behavior: "auto",
       block: "start",
     });
     setActiveId(id);

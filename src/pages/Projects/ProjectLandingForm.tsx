@@ -1,5 +1,5 @@
-import { Button, Card, Col, Form, Input, Row, Select, Space, Switch, Tabs, Tooltip } from "antd";
-import { ArrowLeft, ExternalLink, Languages, Loader2, Play, Plus, Trash2 } from "lucide-react";
+import { Button, Card, Col, Form, Input, Row, Select, Space, Switch, Tabs } from "antd";
+import { ArrowLeft, ExternalLink, Play, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { useNavigate } from "react-router-dom";
@@ -7,43 +7,42 @@ import { toast } from "react-toastify";
 
 import PageHeader from "../../components/Common/PageHeader";
 import PageMeta from "../../components/Common/PageMeta";
-import LangInput, {
-  fieldTooltip,
-  translateToBanglaApi,
-} from "../../components/Common/LangInput";
+import LangInput, { fieldTooltip } from "../../components/Common/LangInput";
 import RichTextEditor from "../../components/Common/RichEditor/RichTextEditor";
 import UploadMedia from "../../components/shared/UploadMedia";
 import PhoneInputField from "../../components/shared/PhoneInputField";
 import { mediaSrc } from "../../utils/mediaSrc";
 import { publicLandingUrl } from "../../utils/landing";
-import {
-  isEmptyRichText,
-  translateRichTextToBangla,
-} from "../../utils/richText";
 
 const SECTIONS = [
-  { key: "hero", title: "Hero (হিরো)" },
-  { key: "about", title: "About (প্রকল্প)" },
-  { key: "residences", title: "Residences (ফ্ল্যাট)" },
-  { key: "elevation", title: "Elevation (এলিভেশন)" },
-  { key: "films", title: "Films (ফিল্ম)" },
-  { key: "amenities", title: "Amenities (সুবিধা)" },
-  { key: "gallery", title: "Gallery (গ্যালারি)" },
-  { key: "location", title: "Location (লোকেশন)" },
-  { key: "process", title: "Process (প্রক্রিয়া)" },
-  { key: "cta", title: "CTA band (কল ব্যান্ড)" },
-  { key: "reviews", title: "Reviews (রিভিউ)" },
+  { key: "hero", title: "Hero" },
+  { key: "about", title: "About" },
+  { key: "residences", title: "Residences" },
+  { key: "elevation", title: "Elevation" },
+  { key: "films", title: "Films" },
+  { key: "amenities", title: "Amenities" },
+  { key: "gallery", title: "Gallery" },
+  { key: "location", title: "Location" },
+  { key: "process", title: "Process" },
+  { key: "cta", title: "CTA band" },
+  { key: "reviews", title: "Reviews" },
   { key: "faq", title: "FAQ" },
-  { key: "enquire", title: "Enquire (বুকিং ফর্ম)" },
-  { key: "custom", title: "Custom (কাস্টম কন্টেন্ট)" },
+  { key: "enquire", title: "Enquire" },
+  { key: "custom", title: "Custom" },
 ] as const;
 
 const TABS = [
-  { key: "publishing", title: "Publishing (প্রকাশ)" },
+  { key: "publishing", title: "Publishing" },
   ...SECTIONS,
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
+const englishOnlyText = (value: string) =>
+  value
+    .replace(/\s*\([^)]*[\u0980-\u09FF][^)]*\)/g, "")
+    .replace(/[\u0980-\u09FF]+/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 
 const SECTION_KEYS = new Set(SECTIONS.map((s) => s.key));
 
@@ -103,13 +102,13 @@ const normalizeLandingPathCase = (raw: string) =>
 
 /** Recommended upload sizes so frontend crops look clean. */
 const IMG_SIZE = {
-  hero: "সাইজ: ২৪০০×১৬০০ (৩:২) বা ২৫৬০×১৪৪০ (১৬:৯)। ফুল-স্ক্রিন ব্যাকগ্রাউন্ড — সাবজেক্ট মাঝে/ডানে রাখুন।",
-  about: "সাইজ: ১৮০০×১২০০ (৩:২)। মোবাইলে চেপে যাবে না (object-contain)।",
-  residences: "সাইজ: ১৬০০×১২০০ (৪:৩) বা ২০০০×১২০০। ক্রপ ছাড়া পুরো দেখাবে।",
-  elevation: "সাইজ: লম্বা ১২০০×১৮০০ (২:৩) বা চওড়া ২০০০×১৪০০। গ্যালারি থেকে আলাদা।",
-  films: "সাইজ: ১৯২০×১০৮০ (১৬:৯)। ঐচ্ছিক কভার/পোস্টার ইমেজ। না দিলে ইউটিউব থেকে অটো থাম্বনেইল দেখাবে।",
-  gallery: "সাইজ: ১৯২০×১০৮০ (১৬:৯)। মেইন ভিউয়ার ১৬:৯ ক্রপ করে।",
-  avatar: "সাইজ: ৪০০×৪০০ (১:১)। গোল সার্কেলে দেখায় — মুখ মাঝে রাখুন।",
+  hero: "Recommended: 2400×1600 (3:2) or 2560×1440 (16:9). Full-screen background; keep the subject centered or to the right.",
+  about: "Recommended: 1800×1200 (3:2). The image uses object-contain on mobile.",
+  residences: "Recommended: 1600×1200 (4:3) or 2000×1200. The full image remains visible without cropping.",
+  elevation: "Recommended: portrait 1200×1800 (2:3) or landscape 2000×1400. Use an image distinct from the gallery.",
+  films: "Recommended: 1920×1080 (16:9). Optional cover/poster image; YouTube thumbnail is used when omitted.",
+  gallery: "Recommended: 1920×1080 (16:9). The main viewer crops to 16:9.",
+  avatar: "Recommended: 400×400 (1:1). Displayed in a circular crop; keep the face centered.",
 } as const;
 
 /** Soft length guides so live landing typography stays tidy. */
@@ -142,96 +141,96 @@ const FIELD_GUIDE: Record<
   { tip: string; softMax?: number; optional?: boolean }
 > = {
   eyebrow: {
-    tip: "টাইটেলের উপরের ছোট লেবেল (যেমন: ফ্ল্যাট / প্রকল্প)।",
+    tip: "Short label above the title, such as Apartment or Project.",
     softMax: 22,
   },
   title: {
-    tip: "সেকশনের মূল শিরোনাম — লাইভ পেজে বড় করে দেখায়।",
+    tip: "Main section heading, displayed prominently on the public page.",
     softMax: 48,
   },
   heroTitle: {
-    tip: "হিরোর সবচেয়ে বড় শিরোনাম — প্রথম স্ক্রিনের মেইন টেক্সট।",
+    tip: "The largest hero heading and primary text in the first viewport.",
     softMax: 42,
   },
   lead: {
-    tip: "হিরো টাইটেলের নিচে এক লাইনের সাপোর্ট টেক্সট।",
+    tip: "One-line supporting text below the hero title.",
     softMax: 140,
   },
   body: {
-    tip: "অনুচ্ছেদ / বিস্তারিত লেখা। মোবাইলে পড়তে সুবিধা হয় এমন ছোট রাখুন।",
+    tip: "Paragraph or detailed copy. Keep it concise for mobile readability.",
     softMax: 280,
   },
   description: {
-    tip: "টাইটেলের নিচের সংক্ষিপ্ত বর্ণনা।",
+    tip: "Short description displayed below the title.",
     softMax: 160,
   },
   badge: {
-    tip: "ছোট ব্যাজ/পিল টেক্সট — এক লাইনে থাকতে হবে।",
+    tip: "Short badge or pill text; keep it to one line.",
     softMax: 18,
   },
   cta: {
-    tip: "বাটনের লেখা (যেমন: বুক করুন / কল)। ছোট রাখুন।",
+    tip: "Button label, such as Book or Call. Keep it short.",
     softMax: 22,
   },
   uiLabel: {
-    tip: "ছোট UI লেবেল (Preview / Close / Play)। খুব সংক্ষিপ্ত।",
+    tip: "Short UI label, such as Preview, Close, or Play.",
     softMax: 16,
   },
   price: {
-    tip: "ঐচ্ছিক। ইউনিট নামের পাশে দামের নোট। খালি রাখলে সাইটে দাম দেখাবে না।",
+    tip: "Optional price note displayed beside the unit name. Leave empty to hide it.",
     softMax: 36,
     optional: true,
   },
   metaTitle: {
-    tip: "ব্রাউজার ট্যাব / গুগল সার্চের টাইটেল।",
+    tip: "Title shown in the browser tab and Google search results.",
     softMax: 60,
   },
   metaDesc: {
-    tip: "সার্চ রেজাল্টে টাইটেলের নিচের বর্ণনা।",
+    tip: "Description displayed below the title in search results.",
     softMax: 155,
   },
   short: {
-    tip: "এক লাইনের ছোট টেক্সট।",
+    tip: "Short, one-line text.",
     softMax: 40,
   },
   statValue: {
-    tip: "স্ট্যাটের বড় সংখ্যা/মান (যেমন: ৪.২৯ বা G+৯)।",
+    tip: "Large statistic value, such as 4.29 or G+9.",
     softMax: 10,
   },
   statLabel: {
-    tip: "স্ট্যাটের নিচের ছোট লেবেল (যেমন: কাঠা, তলা)।",
+    tip: "Short label below the statistic, such as Katha or Floors.",
     softMax: 16,
   },
   caption: {
-    tip: "ছবি/ভিডিওর নিচের ক্যাপশন।",
+    tip: "Caption displayed below an image or video.",
     softMax: 48,
   },
   note: {
-    tip: "ঐচ্ছিক সাপোর্ট নোট।",
+    tip: "Optional supporting note.",
     softMax: 100,
     optional: true,
   },
   unitSpec: {
-    tip: "বেড/বাথ/সাইজ চিপ — ছোট রাখুন (যেমন: ৪ বেড, ১,৫৪৪ বর্গফুট)।",
+    tip: "Short bed, bath, or size chip, such as 4 beds or 1,544 sq ft.",
     softMax: 18,
   },
   nav: {
-    tip: "হেডারের “বুক” বাটনের লেখা।",
+    tip: "Label for the header's booking button.",
     softMax: 18,
   },
   icon: {
-    tip: "FontAwesome ক্লাস দিন (যেমন: fa-solid fa-building)।",
+    tip: "Enter a FontAwesome class, such as fa-solid fa-building.",
   },
   url: {
-    tip: "পুরো লিংক দিন — https:// দিয়ে শুরু।",
+    tip: "Enter the full URL beginning with https://.",
   },
   phone: {
-    tip: "মোবাইল নম্বর — ডিফল্ট বাংলাদেশ (+880)। ফ্ল্যাগ থেকে অন্য দেশও বেছে নিতে পারবেন।",
+    tip: "Enter a phone number. The default country code is Bangladesh (+880); use the flag to select another country.",
   },
 };
 
 const imageTooltip = (hint: string) =>
-  fieldTooltip(`ছবির সাইজ গাইড: ${hint}`);
+  fieldTooltip(englishOnlyText(`Image size guide: ${hint}`));
 
 /** Plain Form.Item label + Ant Design tooltip (same as text fields). */
 const plainField = (label: string, kind: FieldKind) => {
@@ -315,36 +314,8 @@ const tabSaveLabel = (tab: TabKey) => {
   return `Save ${short}`;
 };
 
-/** Collect every `…Bn` field and its English sibling under a form value tree. */
-function collectBnPairs(
-  value: unknown,
-  path: (string | number)[] = [],
-): { en: (string | number)[]; bn: (string | number)[] }[] {
-  if (Array.isArray(value)) {
-    return value.flatMap((item, index) =>
-      collectBnPairs(item, [...path, index]),
-    );
-  }
-  if (!value || typeof value !== "object") return [];
-
-  const pairs: { en: (string | number)[]; bn: (string | number)[] }[] = [];
-  const record = value as Record<string, unknown>;
-  for (const [key, entry] of Object.entries(record)) {
-    if (key.endsWith("Bn")) {
-      const enKey = key.slice(0, -2);
-      if (enKey in record && typeof record[enKey] === "string") {
-        pairs.push({ en: [...path, enKey], bn: [...path, key] });
-      }
-      continue;
-    }
-    pairs.push(...collectBnPairs(entry, [...path, key]));
-  }
-  return pairs;
-}
-
 function Pair({
   en,
-  bn,
   label,
   rows,
   pathPrefix,
@@ -361,33 +332,17 @@ function Pair({
   const guide = kind ? FIELD_GUIDE[kind] : undefined;
   return (
     <Row gutter={16}>
-      <Col xs={24} md={12}>
+      <Col xs={24}>
         <LangInput
           form={form}
           lang="en"
           name={en}
           pathPrefix={pathPrefix}
-          label={`${label} (EN)`}
+          label={label}
           placeholder={`${label} in English`}
           isTextArea={!!rows}
           rows={rows}
-          hint={guide?.tip}
-          softMax={guide?.softMax}
-          optional={guide?.optional}
-        />
-      </Col>
-      <Col xs={24} md={12}>
-        <LangInput
-          form={form}
-          lang="bn"
-          name={bn}
-          sourceFieldName={en}
-          pathPrefix={pathPrefix}
-          label={`${label} (BN)`}
-          placeholder={`${label} বাংলায়`}
-          isTextArea={!!rows}
-          rows={rows}
-          hint={guide?.tip}
+          hint={englishOnlyText(guide?.tip || "")}
           softMax={guide?.softMax}
           optional={guide?.optional}
         />
@@ -396,136 +351,19 @@ function Pair({
   );
 }
 
-function TranslateSectionButton({
-  sectionKey,
-}: {
-  /** When set, walk that section. When omitted, only publishing meta fields. */
-  sectionKey?: string;
-}) {
-  const form = Form.useFormInstance();
-  const [busy, setBusy] = useState(false);
-
-  const onTranslateAll = async () => {
-    setBusy(true);
-    let count = 0;
-    try {
-      const pairs = sectionKey
-        ? collectBnPairs(form.getFieldValue(sectionKey), [sectionKey])
-        : collectBnPairs(
-            form.getFieldsValue([
-              "metaTitle",
-              "metaTitleBn",
-              "metaDescription",
-              "metaDescriptionBn",
-              "navEnquire",
-              "navEnquireBn",
-            ]),
-          );
-
-      for (const pair of pairs) {
-        const enVal = String(form.getFieldValue(pair.en) || "").trim();
-        if (!enVal) continue;
-        const looksHtml = /<[a-z][\s\S]*>/i.test(enVal);
-        const bnText = looksHtml
-          ? await translateRichTextToBangla(enVal)
-          : await translateToBanglaApi(enVal);
-        if (bnText) {
-          form.setFieldValue(pair.bn, bnText);
-          count++;
-        }
-      }
-
-      if (count > 0) {
-        toast.success(`${count}টি ফিল্ড বাংলায় অনুবাদ করা হয়েছে`);
-      } else {
-        toast.info("অনুবাদ করার মতো কোনো ইংরেজি টেক্সট পাওয়া যায়নি");
-      }
-    } catch {
-      toast.error("অনুবাদ করতে সমস্যা হয়েছে");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <Tooltip title="এই ট্যাবের সব ইংরেজি ফিল্ড বাংলায় অনুবাদ করুন">
-      <Button
-        icon={<Languages className="h-4 w-4" />}
-        loading={busy}
-        onClick={onTranslateAll}
-      >
-        সবগুলো বাংলা করুন
-      </Button>
-    </Tooltip>
-  );
-}
-
-/** Dual TinyMCE editors for the bottom custom rich-text section. */
+/** English rich-text editor for the bottom custom section. */
 function CustomBodyEditors() {
-  const form = Form.useFormInstance();
-  const [busy, setBusy] = useState(false);
-
-  const onTranslateBody = async () => {
-    const enText = form.getFieldValue(["custom", "body"]);
-    if (isEmptyRichText(enText)) {
-      toast.info("অনুবাদের জন্য আগে ইংরেজিতে লেখাটি লিখুন");
-      return;
-    }
-    setBusy(true);
-    try {
-      form.setFieldValue(
-        ["custom", "bodyBn"],
-        await translateRichTextToBangla(enText),
-      );
-      toast.success("লেখাটি বাংলায় রূপান্তর করা হয়েছে");
-    } catch {
-      toast.error("অনুবাদ করতে সমস্যা হয়েছে");
-    } finally {
-      setBusy(false);
-    }
-  };
-
   return (
     <div className="mt-2 flex flex-col gap-4">
       <Form.Item
         name={["custom", "body"]}
-        label="Body (English)"
-        tooltip="ল্যান্ডিং পেজের নিচে দেখাবে — হেডিং, লিস্ট, লিংক, ছবি ব্যবহার করতে পারবেন। দৈর্ঘ্যের সীমা নেই, তবে খুব লম্বা হলে স্ক্রল বাড়বে।"
+        label="Body"
+        tooltip="This content appears at the bottom of the landing page. Use headings, lists, links, and images as needed."
       >
         <RichTextEditor
           placeholder="Write free-form content in English..."
           height={420}
         />
-      </Form.Item>
-
-      <Form.Item
-        name={["custom", "bodyBn"]}
-        label={
-          <div className="flex w-full items-center justify-between gap-2">
-            <span>Body (Bangla)</span>
-            <Tooltip title="ইংরেজি বডি থেকে বাংলায় রূপান্তর করুন">
-              <Button
-                type="link"
-                size="small"
-                className="!h-auto !px-1 !text-xs flex shrink-0 items-center gap-1 whitespace-nowrap"
-                onClick={onTranslateBody}
-                loading={busy}
-                icon={
-                  busy ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Languages className="h-3.5 w-3.5" />
-                  )
-                }
-              >
-                {busy ? "রূপান্তর হচ্ছে..." : "বাংলা করুন"}
-              </Button>
-            </Tooltip>
-          </div>
-        }
-        tooltip="বাংলা সাইটে এই লেখাটি দেখাবে। ইংরেজি থেকে “বাংলা করুন” চাপতে পারেন।"
-      >
-        <RichTextEditor placeholder="বাংলায় লিখুন..." height={420} />
       </Form.Item>
     </div>
   );
@@ -664,7 +502,7 @@ const FilmItemRow = ({
               </span>
             </div>
             <p className="mt-1 text-xs text-secondary-600">
-              YouTube thumbnail এবং ভিডিও সরাসরি YouTube থেকে লোড ও প্লে হবে।
+              The thumbnail and video are loaded and played directly from YouTube.
             </p>
           </div>
         </div>
@@ -689,12 +527,11 @@ function Block({
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="font-heading text-base font-semibold text-secondary-900">
-            {title}
+            {englishOnlyText(title)}
           </h3>
-          <p className="mt-0.5 text-xs text-secondary-500">{hint}</p>
+          <p className="mt-0.5 text-xs text-secondary-500">{englishOnlyText(hint)}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {sectionKey ? <TranslateSectionButton sectionKey={sectionKey} /> : null}
           {sectionKey ? (
             <Form.Item
               name={["sections", sectionKey, "visible"]}
@@ -923,7 +760,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
             activeKey={activeTab}
             onChange={(key) => {
               setActiveTab(key as TabKey);
-              window.scrollTo({ top: 0, behavior: "smooth" });
+              window.scrollTo({ top: 0, behavior: "auto" });
             }}
             size="small"
             tabBarGutter={8}
@@ -931,7 +768,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
               key: tab.key,
               label: (
                 <span className="text-sm font-medium whitespace-nowrap">
-                  {tab.title}
+                  {englishOnlyText(tab.title)}
                 </span>
               ),
             }))}
@@ -943,7 +780,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <h3 className="font-heading text-base font-semibold text-secondary-900">
-                  Publishing (প্রকাশ)
+                  Publishing
                 </h3>
                 <p className="mt-0.5 text-xs text-secondary-500">
                   This path is the public landing URL. Hide a section on its tab to take it off the page.
@@ -964,7 +801,6 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
                   ) : null}
                 </p>
               </div>
-              <TranslateSectionButton />
             </div>
             <Row gutter={16}>
               <Col xs={24} md={10}>
@@ -972,23 +808,23 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
                   name="path"
                   label="Landing path"
                   tooltip={fieldTooltip(
-                    "লাইভ URL এর অংশ। স্পেস দেওয়া যাবে না — ছোট হাতের অক্ষর, সংখ্যা ও - ব্যবহার করুন (যেমন: zoomgreencity বা zoom-green-city)।",
+                    "This is part of the live URL. Use lowercase letters, numbers, and hyphens only (for example: zoom-green-city).",
                   )}
                   validateFirst
                   rules={[
-                    { required: true, message: "Landing path আবশ্যক" },
+                    { required: true, message: "Landing path is required" },
                     {
                       validator: async (_, value) => {
                         const v = String(value || "");
                         if (!v) return;
                         if (/\s/.test(v)) {
                           throw new Error(
-                            "স্পেস দেওয়া যাবে না। স্পেস সরিয়ে একসাথে লিখুন, অথবা - ব্যবহার করুন (যেমন: zoom-green-city)।",
+                            "Spaces are not allowed. Remove spaces or replace them with hyphens (for example: zoom-green-city).",
                           );
                         }
                         if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(v)) {
                           throw new Error(
-                            "শুধু ছোট হাতের ইংরেজি অক্ষর (a–z), সংখ্যা (0–9) ও হাইফেন (-) চলবে। বাংলা বা অন্য চিহ্ন নয়।",
+                            "Use lowercase letters (a–z), numbers (0–9), and hyphens (-) only.",
                           );
                         }
                       },
@@ -1001,7 +837,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
                     )
                   }
                 >
-                  <Input placeholder="zoomalzahara বা zoom-green-city" />
+                  <Input placeholder="zoom-alzahara or zoom-green-city" />
                 </Form.Item>
               </Col>
               <Col xs={24} md={6}>
@@ -1009,7 +845,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
                   name="isActive"
                   label="Published"
                   valuePropName="checked"
-                  tooltip="চালু থাকলে পাবলিক সাইটে ল্যান্ডিং পেজ দেখা যাবে।"
+                  tooltip="When enabled, the landing page is visible on the public website."
                 >
                   <Switch />
                 </Form.Item>
@@ -1043,7 +879,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
           <div className={panelClass("hero")}>
           <Block
             sectionKey="hero"
-            title="Hero (হিরো)"
+            title="Hero"
             hint="First screen. Set badges, title, lead story, buttons, stats, and background slider images."
           >
                   <Pair en={["hero", "title"]} bn={["hero", "titleBn"]} label="Title" kind="heroTitle" />
@@ -1082,7 +918,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
           <div className={panelClass("about")}>
           <Block
             sectionKey="about"
-            title="About (প্রকল্প)"
+            title="About"
             hint="The project story, the side photo and the points beside it."
           >
                   <Pair en={["about", "eyebrow"]} bn={["about", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
@@ -1110,7 +946,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
           <div className={panelClass("residences")}>
           <Block
             sectionKey="residences"
-            title="Residences (ফ্ল্যাট)"
+            title="Residences"
             hint="Flat section title, featured unit info, specifications, highlights, and interior gallery photos."
           >
                   <Pair en={["residences", "eyebrow"]} bn={["residences", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
@@ -1118,7 +954,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
                   <Pair en={["residences", "description"]} bn={["residences", "descriptionBn"]} label="Description" rows={3} kind="description" />
                   
                   <div className="my-4 rounded-lg border border-gray-200 bg-gray-50/50 p-4">
-                    <h4 className="font-heading text-sm font-semibold text-secondary-800 mb-3">Featured Unit Specifications (মডেল ফ্ল্যাট বিবরণ)</h4>
+                    <h4 className="font-heading text-sm font-semibold text-secondary-800 mb-3">Featured Unit Specifications</h4>
                     <Pair en={["residences", "unit", "name"]} bn={["residences", "unit", "nameBn"]} label="Unit name" kind="short" />
                     <Pair en={["residences", "featured"]} bn={["residences", "featuredBn"]} label="Featured badge" kind="badge" />
                     <Pair en={["residences", "unit", "note"]} bn={["residences", "unit", "noteBn"]} label="Layout / features note" rows={2} kind="note" />
@@ -1156,7 +992,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
           <div className={panelClass("elevation")}>
           <Block
             sectionKey="elevation"
-            title="Elevation (এলিভেশন)"
+            title="Elevation"
             hint="Building views visitors can open full screen."
           >
                   <Pair en={["elevation", "eyebrow"]} bn={["elevation", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
@@ -1186,7 +1022,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
           <div className={panelClass("films")}>
           <Block
             sectionKey="films"
-            title="Films (ফিল্ম)"
+            title="Films"
             hint="Project films from Facebook or YouTube."
           >
                   <Pair en={["films", "eyebrow"]} bn={["films", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
@@ -1204,8 +1040,8 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
           <div className={panelClass("amenities")}>
           <Block
             sectionKey="amenities"
-            title="Amenities (সুবিধা)"
-            hint="Maps link দিলেই location pin দেখাবে; না দিলে pin থাকবে না। Pin ক্লিক = প্রজেক্ট থেকে রুট।"
+            title="Amenities"
+            hint="Add a map link to display a location pin. Clicking the pin opens directions from the project."
           >
                   <Pair en={["amenities", "eyebrow"]} bn={["amenities", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
                   <Pair en={["amenities", "title"]} bn={["amenities", "titleBn"]} label="Title" kind="title" />
@@ -1240,7 +1076,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
           <div className={panelClass("gallery")}>
           <Block
             sectionKey="gallery"
-            title="Gallery (গ্যালারি)"
+            title="Gallery"
             hint="Photos visitors can open larger."
           >
                   <Pair en={["gallery", "eyebrow"]} bn={["gallery", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
@@ -1268,7 +1104,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
           <div className={panelClass("location")}>
           <Block
             sectionKey="location"
-            title="Location (লোকেশন)"
+            title="Location"
             hint="The map and the facts beside it."
           >
                   <Pair en={["location", "eyebrow"]} bn={["location", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
@@ -1297,7 +1133,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
           <div className={panelClass("process")}>
           <Block
             sectionKey="process"
-            title="Process (প্রক্রিয়া)"
+            title="Process"
             hint="The booking and acquisition steps."
           >
                   <Pair en={["process", "eyebrow"]} bn={["process", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
@@ -1316,7 +1152,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
           <div className={panelClass("cta")}>
           <Block
             sectionKey="cta"
-            title="CTA band (কল ব্যান্ড)"
+            title="CTA band"
             hint="The bottom call to action band with quick inquiry & call buttons."
           >
                   <Pair en={["cta", "eyebrow"]} bn={["cta", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
@@ -1331,7 +1167,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
           <div className={panelClass("reviews")}>
           <Block
             sectionKey="reviews"
-            title="Reviews (রিভিউ)"
+            title="Reviews"
             hint="Client quotes and review videos."
           >
                   <Pair en={["reviews", "eyebrow"]} bn={["reviews", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
@@ -1385,7 +1221,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
           <div className={panelClass("enquire")}>
           <Block
             sectionKey="enquire"
-            title="Enquire (বুকিং ফর্ম)"
+            title="Enquire"
             hint="The booking form pitch, direct action buttons, and form labels."
           >
                   <Pair en={["enquire", "eyebrow"]} bn={["enquire", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
@@ -1394,7 +1230,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
                   <Pair en={["enquire", "phoneLabel"]} bn={["enquire", "phoneLabelBn"]} label="Phone label" kind="uiLabel" />
                   <Pair en={["enquire", "whatsappLabel"]} bn={["enquire", "whatsappLabelBn"]} label="WhatsApp label" kind="uiLabel" />
                   <div className="my-4 rounded-lg border border-gray-200 bg-gray-50/50 p-4">
-                    <h4 className="font-heading text-sm font-semibold text-secondary-800 mb-3">Lead Form Fields & Copy (লিড ফর্মের ফিল্ডসমূহ)</h4>
+                    <h4 className="font-heading text-sm font-semibold text-secondary-800 mb-3">Lead Form Fields & Copy</h4>
                     <Form.Item name={["enquire", "source"]} {...plainField("Lead source", "short")}>
                       <Input placeholder="Zoom Al Zahara" />
                     </Form.Item>
@@ -1417,7 +1253,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
           <div className={panelClass("custom")}>
           <Block
             sectionKey="custom"
-            title="Custom (কাস্টম কন্টেন্ট)"
+            title="Custom"
             hint="Bottom page section with a rich text editor — headings, lists, links, images. Place any free-form content here."
           >
                   <Pair en={["custom", "eyebrow"]} bn={["custom", "eyebrowBn"]} label="Eyebrow" kind="eyebrow" />
@@ -1444,7 +1280,7 @@ const ProjectLandingForm = ({ project, initial, saving, onSubmitSection }: Props
             onClick={handleSave}
             className="min-w-[12rem] !flex items-center justify-center"
           >
-            {busy ? "সেকশন সেভ হচ্ছে..." : tabSaveLabel(activeTab)}
+            {busy ? "Saving..." : tabSaveLabel(activeTab)}
           </Button>
         </div>
       </Form>

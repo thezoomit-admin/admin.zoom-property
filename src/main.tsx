@@ -1,10 +1,5 @@
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import { ConfigProvider } from "antd";
-// Lenis's own stylesheet. Small but not optional: it is what puts
-// `overscroll-behavior: contain` on the elements marked `data-lenis-prevent`,
-// so an inner scroller that reaches its end stops there instead of handing the
-// rest of the gesture to the page behind it.
-import "lenis/dist/lenis.css";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";

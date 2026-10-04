@@ -32,7 +32,7 @@ const ProjectLandingPage = () => {
       <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 py-20">
         <Spin size="large" />
         <p className="text-sm text-secondary-500 font-medium">
-          প্রকল্পের ল্যান্ডিং পেজ লোড হচ্ছে...
+          Loading project landing page...
         </p>
       </div>
     );
@@ -43,15 +43,15 @@ const ProjectLandingPage = () => {
       <div className="flex min-h-[50vh] items-center justify-center p-6">
         <Result
           status="404"
-          title="প্রকল্প পাওয়া যায়নি"
-          subTitle="এই আইডি বিশিষ্ট প্রকল্পের কোনো ল্যান্ডিং পেজ তথ্য পাওয়া যায়নি অথবা সার্ভার থেকে লোড হতে ব্যর্থ হয়েছে।"
+          title="Project not found"
+          subTitle="No landing page was found for this project, or the server could not load it."
           extra={
             <Button
               type="primary"
               icon={<ArrowLeft className="h-4 w-4" />}
               onClick={() => navigate("/projects")}
             >
-              প্রকল্প তালিকায় ফিরে যান
+              Back to projects
             </Button>
           }
         />

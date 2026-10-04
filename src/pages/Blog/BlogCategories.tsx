@@ -178,9 +178,6 @@ const BlogCategories = () => {
           >
             <Input placeholder="Category Name (e.g., Market)" />
           </Form.Item>
-          <Form.Item name="nameBn" className="!m-0 !min-w-48">
-            <Input placeholder="বাংলা" />
-          </Form.Item>
           <Button
             type="primary"
             htmlType="submit"

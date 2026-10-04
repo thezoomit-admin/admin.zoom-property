@@ -8,16 +8,10 @@ import { toggleSidebar } from "../../../redux/features/sidebar/sidebarSlice";
 import { useGetCompanySettingsQuery } from "../../../redux/features/company/companyApi";
 import NextImage from "../../shared/NextImage";
 import AdminMenu from "./AdminMenu";
-import { useSmoothScroll } from "../../../hooks/useSmoothScroll";
 
 const Sidebar = () => {
   const trigger = useRef<HTMLButtonElement | null>(null);
   const sidebar = useRef<HTMLElement | null>(null);
-  const navScroller = useRef<HTMLElement | null>(null);
-  const navContent = useRef<HTMLDivElement | null>(null);
-
-  // The menu gets the same wheel behaviour as the page beside it.
-  useSmoothScroll(navScroller, navContent, false);
   const sidebarOpen = useAppSelector((state: any) => state.sidebar.isActive);
   const isCollapsed = useAppSelector((state: any) => state.sidebar.isCollapsed);
   const dispatch = useAppDispatch();
@@ -124,25 +118,17 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* The sidebar scrolls on its own, and it is a sibling of the main
-          column rather than inside it, so the panel Lenis instance never saw
-          a wheel event over here. It carried `data-lenis-prevent`, which read
-          as "opted out of smooth scroll" when the truth was that it had never
-          been offered any. Its own instance, so a long menu scrolls like the
-          page beside it. */}
       <nav
-        ref={navScroller}
         className="flex flex-col bg-white flex-1 min-h-0 overflow-x-hidden overflow-y-auto scrollbar-hide"
       >
-        {/* One child holding everything: Lenis measures a single element as
-            the scrollable length. `min-h-full` keeps the logout at the foot
+        {/* `min-h-full` keeps the logout at the foot
             when the menu is short, which is what `mt-auto` did before.
             `shrink-0` is what makes the menu scrollable at all: a flex item
             defaults to `min-height: auto`, which stops it being squeezed below
             its own content, and `min-h-full` overrides exactly that. Without
             it this box collapses to the nav's height, the menu spills out of
             it unseen, and the nav concludes there is nothing to scroll. */}
-        <div ref={navContent} className="flex min-h-full shrink-0 flex-col">
+        <div className="flex min-h-full shrink-0 flex-col">
         <AdminMenu />
 
         <div

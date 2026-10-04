@@ -592,11 +592,7 @@ const AllErrorLogs = () => {
                 <Text type="secondary" className="text-xs uppercase">
                   Stack trace
                 </Text>
-                {/* Scrolls on its own, so it opts out of the page's smooth
-                    scrolling — otherwise the wheel over a long stack trace
-                    moves the page behind it instead of the trace. */}
                 <pre
-                  data-lenis-prevent
                   className="text-xs font-mono bg-gray-900 text-gray-100 px-3 py-2 rounded mt-1 overflow-auto overscroll-contain max-h-72"
                 >
                   {selected.stack}

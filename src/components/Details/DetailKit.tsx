@@ -383,8 +383,8 @@ export const TabBar = ({
 
   const scrollBy = (amount: number) => {
     if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: amount, behavior: "smooth" });
-      setTimeout(checkScroll, 300);
+      scrollRef.current.scrollBy({ left: amount, behavior: "auto" });
+      requestAnimationFrame(checkScroll);
     }
   };
 
