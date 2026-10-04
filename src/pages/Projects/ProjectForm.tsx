@@ -261,25 +261,55 @@ const ProjectForm = ({
                   >
                     <RichTextEditor
                       placeholder="Describe the neighbourhood and nearby conveniences..."
-                      height={260}
+                      height={560}
                     />
                   </Form.Item>
                 </Col>
-                <Col xs={24}>
+              
+              </Row>
+            </div>
+  <div className="space-y-4 pt-8">
+              <div>
+                <h3 className="text-base font-semibold text-foreground">
+                  Media & Visuals
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Upload project hero cover image and architectural gallery photos
+                </p>
+              </div>
+
+              <Row gutter={16}>
+                <Col xs={24} md={8}>
                   <Form.Item
-                    label="Neighbourhood description (Bangla)"
-                    name="descriptionBn"
-                    tooltip="Optional Bangla copy shown beside the map for Bangla visitors."
+                    label="Cover image"
+                    tooltip={`First slide of the Overview banner. ${BANNER_SIZE_HINT}`}
+                    extra={BANNER_SIZE_HINT}
                   >
-                    <RichTextEditor
-                      placeholder="বাংলায় এলাকার বিবরণ লিখুন..."
-                      height={260}
+                    <UploadMedia
+                      form={form}
+                      fieldPath="coverImageUrl"
+                      idFieldPath="coverImage"
+                      type="image"
+                    />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={16}>
+                  <Form.Item
+                    label="Gallery"
+                    tooltip={`The rest of the Overview banner slides. ${BANNER_SIZE_HINT}`}
+                    extra={BANNER_SIZE_HINT}
+                  >
+                    <UploadMedia
+                      form={form}
+                      fieldPath="imageUrls"
+                      idFieldPath="images"
+                      mode="multiple"
+                      type="image"
                     />
                   </Form.Item>
                 </Col>
               </Row>
             </div>
-
             {/* 2. The Build & Milestones */}
             <div className="space-y-4 pt-8">
               <Row gutter={16}>
@@ -413,48 +443,7 @@ const ProjectForm = ({
               </div>
             </div>
             {/* 3. Media & Attachments */}
-            <div className="space-y-4 pt-8">
-              <div>
-                <h3 className="text-base font-semibold text-foreground">
-                  Media & Visuals
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Upload project hero cover image and architectural gallery photos
-                </p>
-              </div>
-
-              <Row gutter={16}>
-                <Col xs={24} md={8}>
-                  <Form.Item
-                    label="Cover image"
-                    tooltip={`First slide of the Overview banner. ${BANNER_SIZE_HINT}`}
-                    extra={BANNER_SIZE_HINT}
-                  >
-                    <UploadMedia
-                      form={form}
-                      fieldPath="coverImageUrl"
-                      idFieldPath="coverImage"
-                      type="image"
-                    />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={16}>
-                  <Form.Item
-                    label="Gallery"
-                    tooltip={`The rest of the Overview banner slides. ${BANNER_SIZE_HINT}`}
-                    extra={BANNER_SIZE_HINT}
-                  >
-                    <UploadMedia
-                      form={form}
-                      fieldPath="imageUrls"
-                      idFieldPath="images"
-                      mode="multiple"
-                      type="image"
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </div>
+          
 
             {/* 4. Specs tab */}
             <div className="space-y-4 pt-8">
