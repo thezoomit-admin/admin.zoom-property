@@ -329,17 +329,7 @@ const ProjectForm = ({
                           />
                           
                           <Row gutter={16}>
-                            <Col xs={24} md={12}>
-                              <Form.Item
-                                {...field}
-                                name={[field.name, "eyebrow"]}
-                                label="Section Label / Eyebrow"
-                                className="!mb-4"
-                              >
-                                <Input placeholder="e.g. Exterior" />
-                              </Form.Item>
-                            </Col>
-                            <Col xs={24} md={12}>
+                            <Col xs={24}>
                               <Form.Item
                                 {...field}
                                 name={[field.name, "title"]}
