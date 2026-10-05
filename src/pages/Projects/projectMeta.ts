@@ -27,6 +27,9 @@ export const STAGE_COLOUR: Record<string, string> = {
 export const BANNER_SIZE_HINT =
   "Recommended: 1344 × 527 px (or larger at the same shape, e.g. 2688 × 1054). Other shapes get cropped.";
 
+export const PROJECT_THUMBNAIL_SIZE_HINT =
+  "Recommended: 1200 × 1200 px (1:1 square). Other shapes fit inside the card without cropping.";
+
 /**
  * Features cycle through five layouts on the website (`index % 5`), and each
  * layout frames its image in a different shape.
