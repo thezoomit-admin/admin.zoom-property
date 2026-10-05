@@ -66,10 +66,10 @@ const AgentModal = ({ open, setOpen, editing, setEditing }: any) => {
             label="Name (English)"
             lang="en"
             required
-            placeholder="John Doe"
+            placeholder="Enter Your Name"
           />
-          <Form.Item name="phone" label="Phone Number">
-            <Input placeholder="+8801XXXXXXXXX" />
+          <Form.Item name="phone" label="Designation">
+            <Input placeholder="Enter Your Designation" />
           </Form.Item>
 
           <Form.Item

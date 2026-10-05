@@ -1608,6 +1608,21 @@ export const cmsPages: CmsPageDef[] = [
             en: "Tell us the area, the budget and when you need to move. We come back with a shortlist, the papers and every cost on one page.",
             bn: "এলাকা, বাজেট আর কবে উঠতে চান জানান। আমরা বাছাই তালিকা, কাগজপত্র আর সব খরচ এক পাতায় নিয়ে ফিরে আসব।",
           },
+          {
+            key: "contact.formTitle",
+            label: "Enquiry Form Title",
+            type: "text",
+            groupHeader: "Enquiry Form Heading",
+            en: "Send an enquiry",
+            bn: "বার্তা পাঠান",
+          },
+          {
+            key: "contact.formLead",
+            label: "Enquiry Form Description",
+            type: "textarea",
+            en: "One form, no account needed. An advisor picks it up, not an autoresponder.",
+            bn: "একটি ফর্ম, অ্যাকাউন্ট লাগবে না। অটো-রিপ্লাই নয়, একজন পরামর্শদাতা দেখবেন।",
+          },
         ],
       },
       {
