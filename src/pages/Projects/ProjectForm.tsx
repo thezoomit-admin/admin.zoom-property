@@ -290,7 +290,7 @@ const ProjectForm = ({
                 <Col xs={24} md={8}>
                   <Form.Item
                     label="Project card thumbnail"
-                    tooltip={`Portrait image used on project cards. ${PROJECT_THUMBNAIL_SIZE_HINT}`}
+                    tooltip={`Square image used on project cards. ${PROJECT_THUMBNAIL_SIZE_HINT}`}
                     extra={PROJECT_THUMBNAIL_SIZE_HINT}
                   >
                     <UploadMedia
