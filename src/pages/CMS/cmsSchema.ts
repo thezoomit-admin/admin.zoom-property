@@ -1717,15 +1717,15 @@ export const cmsPages: CmsPageDef[] = [
             key: "contact.chattogram",
             label: "Office 2 — City",
             type: "text",
-            en: "Chattogram",
-            bn: "চট্টগ্রাম"
+            en: "",
+            bn: ""
           },
           {
             key: "contact.details.chattogramAddress",
             label: "Office 2 — Address",
             type: "textarea",
-            en: "CDA Avenue, GEC Circle & Khulshi",
-            bn: "সিডিএ অ্যাভিনিউ, জিইসি মোড় ও খুলশী"
+            en: "",
+            bn: ""
           }
         ]
       },
