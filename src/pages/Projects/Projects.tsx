@@ -70,7 +70,7 @@ const Projects = () => {
     setBusyKey(`${id}-stage`);
     try {
       await updateProject({ id, data: { stage: nextStage } }).unwrap();
-      toast.success("Stage updated");
+      toast.success("Status updated");
     } catch (e: any) {
       toast.error(e?.data?.message || "Could not update stage");
     } finally {
@@ -165,7 +165,7 @@ const Projects = () => {
       },
     },
     {
-      title: "Stage",
+      title: "Status",
       dataIndex: "stage",
       key: "stage",
       width: 140,
@@ -179,7 +179,7 @@ const Projects = () => {
         >
           <Select
             size="small"
-            value={stage || "Planning"}
+            value={stage || "Upcoming"}
             className="w-full"
             loading={busyKey === `${r._id}-stage`}
             options={STAGES}
@@ -375,7 +375,7 @@ const Projects = () => {
         <div className="flex flex-wrap items-center gap-3">
           <Select
             allowClear
-            placeholder="Stage"
+            placeholder="Status"
             className="w-36"
             value={stage}
             options={STAGES}

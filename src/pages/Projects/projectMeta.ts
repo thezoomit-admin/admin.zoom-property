@@ -5,15 +5,15 @@
  * filter ends up offering a stage the form cannot produce.
  */
 export const STAGES = [
-  { value: "Planning", label: "Planning" },
-  { value: "Processing", label: "Processing" },
+  { value: "Upcoming", label: "Upcoming" },
+  { value: "Running", label: "Running" },
   { value: "Completed", label: "Completed" },
 ];
 
 /** Antd Tag colours, so a stage reads the same on every screen. */
 export const STAGE_COLOUR: Record<string, string> = {
-  Planning: "default",
-  Processing: "blue",
+  Upcoming: "gold",
+  Running: "blue",
   Completed: "green",
 };
 
