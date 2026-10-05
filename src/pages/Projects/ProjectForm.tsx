@@ -28,7 +28,12 @@ import {
   normalizeDescriptionForEditor,
   toDescriptionArray,
 } from "../../utils/richText";
-import { BANNER_SIZE_HINT, featureSizeHint, STAGES } from "./projectMeta";
+import {
+  BANNER_SIZE_HINT,
+  featureSizeHint,
+  PROJECT_THUMBNAIL_SIZE_HINT,
+  STAGES,
+} from "./projectMeta";
 
 interface Props {
   /** Undefined when creating. */
@@ -86,6 +91,8 @@ const ProjectForm = ({
         description: normalizeDescriptionForEditor(initial.description),
         descriptionBn: normalizeDescriptionForEditor(initial.descriptionBn),
         features,
+        thumbnailImage: initial.thumbnailImage?._id ?? initial.thumbnailImage,
+        thumbnailImageUrl: mediaSrc(initial.thumbnailImage),
         area: initial.area?._id ?? initial.area,
         coverImage: initial.coverImage?._id ?? initial.coverImage,
         coverImageUrl: mediaSrc(initial.coverImage),
@@ -117,6 +124,7 @@ const ProjectForm = ({
     try {
       const rest = { ...values };
       delete rest.coverImageUrl;
+      delete rest.thumbnailImageUrl;
       delete rest.imageUrls;
       delete rest.videoPosterUrl;
       delete rest.milestones;
@@ -279,6 +287,20 @@ const ProjectForm = ({
               </div>
 
               <Row gutter={16}>
+                <Col xs={24} md={8}>
+                  <Form.Item
+                    label="Project card thumbnail"
+                    tooltip={`Portrait image used on project cards. ${PROJECT_THUMBNAIL_SIZE_HINT}`}
+                    extra={PROJECT_THUMBNAIL_SIZE_HINT}
+                  >
+                    <UploadMedia
+                      form={form}
+                      fieldPath="thumbnailImageUrl"
+                      idFieldPath="thumbnailImage"
+                      type="image"
+                    />
+                  </Form.Item>
+                </Col>
                 <Col xs={24} md={8}>
                   <Form.Item
                     label="Cover image"

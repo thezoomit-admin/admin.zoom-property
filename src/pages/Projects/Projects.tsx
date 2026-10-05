@@ -120,7 +120,7 @@ const Projects = () => {
       dataIndex: "name",
       key: "name",
       render: (name: string, r: any) => {
-        const imgUrl = mediaSrc(r.coverImage);
+        const imgUrl = mediaSrc(r.thumbnailImage) || mediaSrc(r.coverImage);
         const liveUrl =
           r.landing?.path && r.landing.isActive
             ? publicLandingUrl(r.landing.path)
