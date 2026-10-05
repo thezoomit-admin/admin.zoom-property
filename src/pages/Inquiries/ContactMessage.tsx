@@ -23,6 +23,7 @@ interface ContactMessage {
   name: string;
   email: string;
   phone: string;
+  location?: string;
   subject: string;
   message: string;
   type?: string;
@@ -271,6 +272,11 @@ const ContactMessages: React.FC = () => {
                 {selectedMessage.area && (
                   <Descriptions.Item label={<span className="text-gray-500">Area</span>}>
                     {selectedMessage.area === "any" ? "Any Area" : selectedMessage.area}
+                  </Descriptions.Item>
+                )}
+                {selectedMessage.location && (
+                  <Descriptions.Item label={<span className="text-gray-500">Preferred location</span>}>
+                    {selectedMessage.location}
                   </Descriptions.Item>
                 )}
                 {selectedMessage.budget && (
