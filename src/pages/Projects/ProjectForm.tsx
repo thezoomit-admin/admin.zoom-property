@@ -199,7 +199,7 @@ const ProjectForm = ({
         onFinish={handleFinish}
         initialValues={{
           city: "Dhaka",
-          stage: "Planning",
+          stage: "Upcoming",
           isActive: true,
           units: 0,
           unitsLeft: 0,
@@ -336,7 +336,7 @@ const ProjectForm = ({
             <div className="space-y-4 pt-8">
               <Row gutter={16}>
                 <Col xs={12} md={6}>
-                  <Form.Item label="Stage" name="stage">
+                  <Form.Item label="Status" name="stage">
                     <Select options={STAGES} />
                   </Form.Item>
                 </Col>
