@@ -284,6 +284,11 @@ const ContactMessages: React.FC = () => {
                     {selectedMessage.location}
                   </Descriptions.Item>
                 )}
+                {selectedMessage.occupation && (
+                  <Descriptions.Item label={<span className="text-gray-500">Occupation</span>}>
+                    {selectedMessage.occupation}
+                  </Descriptions.Item>
+                )}
                 {selectedMessage.budget && (
                   <Descriptions.Item label={<span className="text-gray-500">Budget</span>}>
                     {selectedMessage.budget}
