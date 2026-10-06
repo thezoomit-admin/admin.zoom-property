@@ -73,7 +73,7 @@ const Sidebar = () => {
         }`}
       >
         <div
-          className={`flex min-w-0 items-center gap-2.5 ${isCollapsed ? "w-full justify-center" : "pl-1"}`}
+          className={`flex min-w-0 items-center gap-2.5 ${isCollapsed ? "w-full justify-center" : "pl-4"}`}
         >
           {isCollapsed ? (
             <div className="w-10 h-10 bg-white border border-secondary-100 rounded-xl flex items-center justify-center shadow-[0_4px_12px_-2px_rgba(19,48,80,0.25)]">
@@ -84,27 +84,12 @@ const Sidebar = () => {
               />
             </div>
           ) : (
-            <>
-              {/* The mark shrinks to make room for the name beside it — at 50px
-                  it filled a 60px bar on its own and left the panel unnamed. */}
-              <NextImage
-                src={logoLight}
-                alt={companyName}
-                accessurl={false}
-                className="h-9 w-auto shrink-0 transition-opacity duration-300"
-              />
-              {/* Name over role: which company this is, then which of its
-                  screens you are on. `truncate` because a company may have a
-                  long name and the sidebar is 260px wide either way. */}
-              <div className="min-w-0 leading-tight">
-                <p className="truncate text-[15px] font-bold text-secondary-900">
-                  {companyName}
-                </p>
-                <p className="truncate text-[11px] font-medium uppercase tracking-wide text-secondary-400">
-                  Admin Panel
-                </p>
-              </div>
-            </>
+            <NextImage
+              src={logoLight}
+              alt={companyName}
+              accessurl={false}
+              className="h-10 w-auto shrink-0 transition-opacity duration-300"
+            />
           )}
         </div>
         <div className="flex items-center gap-2">

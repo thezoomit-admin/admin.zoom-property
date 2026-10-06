@@ -41,8 +41,8 @@ const MainLayout = () => {
      * prints. Undoing the heights and the overflow lets a long ledger flow
      * across as many sheets as it needs.
      */
-    <div className="w-full h-dvh bg-[#F4F7FE] print:h-auto print:bg-white">
-      <div className="flex h-full max-w-9xl mx-auto bg-[#F4F7FE] overflow-hidden shadow-sm print:block print:h-auto print:overflow-visible print:shadow-none">
+    <div className="w-full h-dvh bg-[#FAFBFC] print:h-auto print:bg-white">
+      <div className="flex h-full max-w-9xl mx-auto bg-[#FAFBFC] overflow-hidden shadow-sm print:block print:h-auto print:overflow-visible print:shadow-none">
         {/* Sits above every page: an account still on its issued password gets
             no further until it has been replaced. */}
         <ForcePasswordChangeModal />
