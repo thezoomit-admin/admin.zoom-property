@@ -1165,7 +1165,7 @@ export const cmsPages: CmsPageDef[] = [
   },
   {
     id: "headerFooter",
-    label: "Header & Footer",
+    label: "Header & Footer & CTA",
     description: "The bars at the top and bottom of every page. The phone number, email, addresses and social links they show are edited under Contact \u2014 one number, one place, so the header and the footer can never disagree.",
     sections: [
       {
@@ -1386,18 +1386,11 @@ export const cmsPages: CmsPageDef[] = [
         label: "Contact CTA (all pages)",
         fields: [
           {
-            key: "cta.eyebrow",
-            label: "Eyebrow",
-            type: "text",
-            groupHeader: "Shared contact CTA",
-            hint: "The green call-to-action band at the bottom of most pages. One edit changes it everywhere.",
-            en: "Uncompromising transparency",
-            bn: "স্বচ্ছ পরামর্শ"
-          },
-          {
             key: "cta.title",
             label: "Title",
             type: "text",
+            groupHeader: "Shared contact CTA",
+            hint: "The green call-to-action band at the bottom of most pages. One edit changes it everywhere.",
             en: "Ready to see the shortlist?",
             bn: "আপনার পছন্দের তালিকা দেখতে প্রস্তুত?"
           },
@@ -1413,7 +1406,30 @@ export const cmsPages: CmsPageDef[] = [
             label: "Button",
             type: "text",
             en: "Contact the team",
-            bn: "টিমের সঙ্গে যোগাযোগ করুন"
+            bn: "টিমের সঙ্গে যোগাযোগ করুন",
+            hint: "Opens the leads form in a pop-up."
+          },
+          {
+            key: "cta.modalTitle",
+            label: "Pop-up title",
+            type: "text",
+            en: "Tell us what you are looking for",
+            bn: "আপনি কী খুঁজছেন জানান"
+          },
+          {
+            key: "cta.modalDescription",
+            label: "Pop-up description",
+            type: "textarea",
+            en: "Leave your details and the team will call you back with a focused shortlist.",
+            bn: "আপনার তথ্য দিন, আমাদের টিম বাছাই করা তালিকা নিয়ে আপনাকে ফোন করবে।"
+          },
+          {
+            key: "cta.link",
+            label: "CTA link",
+            type: "url",
+            hint: "Where the visitor goes right after the leads form is submitted: a site path (/thank-you, /properties) or a full address (https://…, https://wa.me/…). Leave empty to stay on the page.",
+            en: "",
+            bn: ""
           }
         ]
       },
