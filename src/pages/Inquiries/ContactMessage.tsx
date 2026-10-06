@@ -274,8 +274,13 @@ const ContactMessages: React.FC = () => {
                     {selectedMessage.area === "any" ? "Any Area" : selectedMessage.area}
                   </Descriptions.Item>
                 )}
+                {selectedMessage.subArea && (
+                  <Descriptions.Item label={<span className="text-gray-500">Sub-area</span>}>
+                    {selectedMessage.subArea}
+                  </Descriptions.Item>
+                )}
                 {selectedMessage.location && (
-                  <Descriptions.Item label={<span className="text-gray-500">Preferred location</span>}>
+                  <Descriptions.Item label={<span className="text-gray-500">Address/City</span>}>
                     {selectedMessage.location}
                   </Descriptions.Item>
                 )}
